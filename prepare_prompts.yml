@@ -1,0 +1,28 @@
+name: Prepare Prompts (No API)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install faster-whisper pydub
+      - name: Split Audio & Transcribe
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: python -u auto_animator.py --mode split
+      - name: Build Prompt Files
+        run: python -u make_prompts.py
+      - name: Upload Prompts Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: prompts-package
+          path: prompts_output/
