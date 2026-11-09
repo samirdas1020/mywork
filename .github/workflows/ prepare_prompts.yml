@@ -15,12 +15,10 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
           pip install faster-whisper pydub
-      - name: Split Audio & Transcribe
+      - name: Split Audio, Transcribe & Build Prompts
         env:
           PYTHONUNBUFFERED: "1"
-        run: python -u auto_animator.py --mode split
-      - name: Build Prompt Files
-        run: python -u make_prompts.py
+        run: python -u prepare_prompts.py
       - name: Upload Prompts Package
         uses: actions/upload-artifact@v4
         with:
