@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Judea: Rewind The Clock</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #090a0f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #viewport {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    background: #000;
+    overflow: hidden;
+    box-shadow: 0 0 50px rgba(0,0,0,0.9);
+  }
+  svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+  }
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+    pointer-events: none;
+  }
+
+  /* Articulated Limb Rigging (CSS Keyframes with absolute px transform-origin) */
+  .arm-l-gest   { transform-origin: 26px 36px; animation: armGestL 0.8s infinite alternate ease-in-out; }
+  .arm-r-gest   { transform-origin: 54px 36px; animation: armGestR 0.85s infinite alternate ease-in-out; }
+  .leg-l-walk   { transform-origin: 30px 62px; animation: legLWalk 0.7s infinite alternate ease-in-out; }
+  .leg-r-walk   { transform-origin: 50px 62px; animation: legRWalk 0.7s infinite alternate ease-in-out; }
+  .char-bob     { animation: charBob 0.35s infinite alternate ease-in-out; }
+
+  @keyframes armGestL { from { transform: rotate(-18deg); } to { transform: rotate(22deg); } }
+  @keyframes armGestR { from { transform: rotate(18deg); } to { transform: rotate(-22deg); } }
+  @keyframes legLWalk { from { transform: rotate(-20deg); } to { transform: rotate(20deg); } }
+  @keyframes legRWalk { from { transform: rotate(20deg); } to { transform: rotate(-20deg); } }
+  @keyframes charBob  { from { transform: translateY(0px); } to { transform: translateY(-3px); } }
+
+  /* Scales of Justice Balance Sway */
+  .scale-beam { transform-origin: 0px 0px; animation: balanceSway 1.8s infinite alternate ease-in-out; }
+  @keyframes balanceSway { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+
+  .text-label {
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    text-shadow: 3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 4px 10px rgba(0,0,0,0.85);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <svg id="stage" viewBox="0 0 1280 720">
+    <defs>
+      <!-- Gradients -->
+      <linearGradient id="studioGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1e1b4b"/>
+        <stop offset="60%" stop-color="#0f172a"/>
+        <stop offset="100%" stop-color="#020617"/>
+      </linearGradient>
+      <linearGradient id="neutralGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#3b82f6"/>
+        <stop offset="50%" stop-color="#8b5cf6"/>
+        <stop offset="100%" stop-color="#ec4899"/>
+      </linearGradient>
+      <linearGradient id="rewindGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#090d16"/>
+        <stop offset="50%" stop-color="#1e293b"/>
+        <stop offset="100%" stop-color="#451a03"/>
+      </linearGradient>
+      <linearGradient id="judeaSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ea580c"/>
+        <stop offset="50%" stop-color="#f59e0b"/>
+        <stop offset="100%" stop-color="#fef08a"/>
+      </linearGradient>
+      <linearGradient id="hillsGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#b45309"/>
+        <stop offset="100%" stop-color="#451a03"/>
+      </linearGradient>
+    </defs>
+
+    <g id="camera-root">
+      <!-- ================= SCENE 0: [0.0s - 3.1s] POLITICALLY CHARGED THEMES ================= -->
+      <!-- Timed: [0.0-2.3s] politically charged themes, [2.3-3.1s] Very charged -->
+      <g class="scene" id="scene-0">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#studioGrad)"/>
+        <!-- Electric / Charged Lightning Field Vectors -->
+        <g stroke="#f59e0b" stroke-width="4" fill="none" opacity="0.6">
+          <path d="M140,80 L200,240 L160,300 L260,460"/>
+          <path d="M1140,100 L1080,260 L1120,320 L1020,490"/>
+          <path d="M640,40 L600,160 L650,220 L610,340" stroke="#ef4444" stroke-width="3"/>
+        </g>
+        <circle cx="640" cy="380" r="260" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="12,8" opacity="0.4"/>
+        <circle cx="640" cy="380" r="160" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8,6" opacity="0.6"/>
+
+        <!-- Opposing Clashing Ideas (Red vs Blue banners clashing) -->
+        <g transform="translate(340, 360)">
+          <path d="M-100,-120 L40,-120 L-20,120 L-160,120 Z" fill="#dc2626" opacity="0.85"/>
+          <text class="text-label" x="-80" y="10" fill="#ffffff" font-size="28" transform="rotate(-15 -80 10)">VIEWPOINT A</text>
+        </g>
+        <g transform="translate(940, 360)">
+          <path d="M-40,-120 L100,-120 L160,120 L20,120 Z" fill="#2563eb" opacity="0.85"/>
+          <text class="text-label" x="80" y="10" fill="#ffffff" font-size="28" transform="rotate(15 80 10)">VIEWPOINT B</text>
+        </g>
+
+        <!-- Dynamic Warning / High Charge Sparks -->
+        <polygon points="640,280 660,340 645,340 665,410 625,355 640,355" fill="#facc15" stroke="#ca8a04" stroke-width="2"/>
+
+        <g transform="translate(640, 110)">
+          <rect x="-320" y="-45" width="640" height="90" rx="16" fill="#000" opacity="0.85" stroke="#ef4444" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#ef4444" font-size="40">POLITICALLY CHARGED</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#fef08a" font-size="22">NAVIGATING COMPLEX PASSIONS</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 1: [3.1s - 10.2s] IMPARTIAL REPORTING & NOT TAKING SIDES ================= -->
+      <!-- Timed: [3.1-6.0s] impartially reporting historical records, [6.0-10.2s] not taking sides, no endorsing -->
+      <g class="scene" id="scene-1">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#studioGrad)"/>
+
+        <!-- The Impartial Gold Scales of Justice (Centerpiece) -->
+        <g transform="translate(640, 310)">
+          <!-- Pillar Base -->
+          <rect x="-12" y="0" width="24" height="240" rx="6" fill="#e2e8f0"/>
+          <rect x="-70" y="230" width="140" height="22" rx="8" fill="#94a3b8"/>
+          <circle cx="0" cy="0" r="18" fill="#f59e0b"/>
+          
+          <!-- Swaying Beam -->
+          <g class="scale-beam">
+            <line x1="-160" y1="0" x2="160" y2="0" stroke="#f59e0b" stroke-width="8" stroke-linecap="round"/>
+            <!-- Left Pan (Side 1) -->
+            <line x1="-150" y1="0" x2="-180" y2="90" stroke="#cbd5e1" stroke-width="3"/>
+            <line x1="-150" y1="0" x2="-120" y2="90" stroke="#cbd5e1" stroke-width="3"/>
+            <path d="M-200,90 Q-150,130 -100,90 Z" fill="#ca8a04"/>
+            <!-- Right Pan (Side 2) -->
+            <line x1="150" y1="0" x2="120" y2="90" stroke="#cbd5e1" stroke-width="3"/>
+            <line x1="150" y1="0" x2="180" y2="90" stroke="#cbd5e1" stroke-width="3"/>
+            <path d="M100,90 Q150,130 200,90 Z" fill="#ca8a04"/>
+          </g>
+        </g>
+
+        <!-- Neutral Objective Presenter Left -->
+        <g class="char-bob" transform="translate(320, 390)">
+          <!-- Legs -->
+          <g class="leg-l-walk">
+            <rect x="24" y="60" width="13" height="52" rx="4" fill="#1e293b"/>
+            <rect x="20" y="104" width="22" height="10" rx="3" fill="#64748b"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="44" y="60" width="13" height="52" rx="4" fill="#1e293b"/>
+            <rect x="40" y="104" width="22" height="10" rx="3" fill="#64748b"/>
+          </g>
+          <!-- Torso in Slate Journalist Suit -->
+          <rect x="20" y="24" width="40" height="42" rx="6" fill="#334155"/>
+          <polygon points="32,24 40,42 48,24" fill="#f8fafc"/>
+          <!-- Head -->
+          <circle cx="40" cy="12" r="14" fill="#fed7aa"/>
+          <circle cx="45" cy="11" r="2.5" fill="#0f172a"/>
+          <path d="M26,10 Q40,-4 54,6 L54,12 Z" fill="#1e293b"/>
+          <!-- Arms holding open ancient primary document -->
+          <g class="arm-l-gest">
+            <rect x="16" y="24" width="12" height="30" rx="4" fill="#334155"/>
+            <rect x="-8" y="28" width="28" height="36" rx="3" fill="#fef08a" stroke="#ca8a04" stroke-width="2"/>
+          </g>
+          <g class="arm-r-gest">
+            <rect x="52" y="24" width="12" height="30" rx="4" fill="#334155"/>
+            <circle cx="58" cy="54" r="5" fill="#fed7aa"/>
+          </g>
+        </g>
+
+        <!-- Titles -->
+        <g transform="translate(640, 110)">
+          <rect x="-310" y="-45" width="620" height="90" rx="16" fill="#000" opacity="0.85" stroke="#3b82f6" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#38bdf8" font-size="38">IMPARTIAL REPORTING</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#ffffff" font-size="20">NO SIDES TAKEN • PURE CONTEXT</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 2: [10.2s - 16.0s] LAYERS OF CONTEXT ================= -->
+      <!-- Timed: [10.2-12.5s] context required, [12.5-14.2s] layers of history, [14.2-16.0s] brought us to this moment -->
+      <g class="scene" id="scene-2">
+        <rect x="-100" y="-100" width="1480" height="920" fill="#0b1329"/>
+
+        <!-- 3 Archeological Strata Blocks (Historical Sedimentary Layers) -->
+        <g id="context-layer-top" transform="translate(240, 240)">
+          <rect x="0" y="0" width="800" height="75" rx="10" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2.5"/>
+          <text class="text-label" x="40" y="48" fill="#93c5fd" font-size="30">MODERN ERA (1948 - PRESENT)</text>
+          <text class="text-label" x="760" y="48" text-anchor="end" fill="#ffffff" font-size="18">STATEHOOD & GEOPOLITICS</text>
+        </g>
+        <g id="context-layer-mid" transform="translate(240, 335)">
+          <rect x="0" y="0" width="800" height="75" rx="10" fill="#701a75" stroke="#d946ef" stroke-width="2.5"/>
+          <text class="text-label" x="40" y="48" fill="#f5d0fe" font-size="30">IMPERIAL RULE (636 - 1917 AD)</text>
+          <text class="text-label" x="760" y="48" text-anchor="end" fill="#ffffff" font-size="18">CALIPHATES • CRUSADES • OTTOMANS</text>
+        </g>
+        <g id="context-layer-bot" transform="translate(240, 430)">
+          <rect x="0" y="0" width="800" height="75" rx="10" fill="#78350f" stroke="#f59e0b" stroke-width="2.5"/>
+          <text class="text-label" x="40" y="48" fill="#fef08a" font-size="30">ANCIENT JUDEA (2,000 YEARS AGO)</text>
+          <text class="text-label" x="760" y="48" text-anchor="end" fill="#ffffff" font-size="18">ROMAN REVOLT & DIASPORA</text>
+        </g>
+
+        <!-- Upward Arrow: "Brought us to this moment" -->
+        <g transform="translate(1090, 390)">
+          <line x1="0" y1="120" x2="0" y2="-110" stroke="#facc15" stroke-width="8" stroke-linecap="round"/>
+          <polygon points="-18,-110 0,-140 18,-110" fill="#facc15"/>
+          <text class="text-label" x="25" y="0" fill="#facc15" font-size="20">MOMENTUM</text>
+        </g>
+
+        <!-- Titles -->
+        <g transform="translate(640, 110)">
+          <rect x="-310" y="-45" width="620" height="90" rx="16" fill="#000" opacity="0.85" stroke="#f59e0b" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#facc15" font-size="38">THE LAYERS OF HISTORY</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#ffffff" font-size="20">UNPACKING TWO MILLENNIA OF CONTEXT</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 3: [16.0s - 19.3s] REWIND THE CLOCK ================= -->
+      <!-- Timed: [16.0-17.5s] peeling back layers, [17.5-19.3s] let's rewind the clock -->
+      <g class="scene" id="scene-3">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#rewindGrad)"/>
+
+        <!-- Massive Giant Clock Dial (Spinning Counter-Clockwise via JS Clock) -->
+        <g transform="translate(640, 380)">
+          <circle cx="0" cy="0" r="230" fill="#0f172a" stroke="#ca8a04" stroke-width="10"/>
+          <circle cx="0" cy="0" r="215" fill="none" stroke="#facc15" stroke-width="3" stroke-dasharray="14,10"/>
+          <!-- Roman Numerals Clock Face -->
+          <text class="text-label" x="0" y="-165" text-anchor="middle" fill="#fde047" font-size="34">XII</text>
+          <text class="text-label" x="175" y="12" text-anchor="middle" fill="#fde047" font-size="34">III</text>
+          <text class="text-label" x="0" y="185" text-anchor="middle" fill="#fde047" font-size="34">VI</text>
+          <text class="text-label" x="-175" y="12" text-anchor="middle" fill="#fde047" font-size="34">IX</text>
+          
+          <!-- Spinning Clock Hands (Driven deterministically) -->
+          <g id="clock-hands-group">
+            <line x1="0" y1="0" x2="0" y2="-130" stroke="#f8fafc" stroke-width="6" stroke-linecap="round"/>
+            <polygon points="-8,-130 0,-155 8,-130" fill="#f8fafc"/>
+            <line x1="0" y1="0" x2="80" y2="0" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="0" cy="0" r="14" fill="#ca8a04"/>
+          </g>
+
+          <!-- Year Counter Indicator Inside Dial -->
+          <rect x="-110" y="55" width="220" height="50" rx="8" fill="#000" stroke="#ca8a04" stroke-width="2"/>
+          <text class="text-label" id="rewind-year-text" x="0" y="90" text-anchor="middle" fill="#38bdf8" font-size="30">2026 AD</text>
+        </g>
+
+        <!-- Rewind Direction Vortex Arrows -->
+        <path d="M420,180 Q640,110 840,180" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+        <polygon points="415,165 390,190 425,205" fill="#38bdf8"/>
+
+        <!-- Titles -->
+        <g transform="translate(640, 95)">
+          <rect x="-260" y="-40" width="520" height="80" rx="14" fill="#000" opacity="0.85" stroke="#38bdf8" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#38bdf8" font-size="38">REWIND THE CLOCK</text>
+          <text class="text-label" x="0" y="30" text-anchor="middle" fill="#ffffff" font-size="18">TRAVELING BACK 2,000 YEARS</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 4: [19.3s - 30.0s] 2,000 YEARS AGO: JUDEA IN THE ROMAN EMPIRE ================= -->
+      <!-- Timed: [19.3-23.0s] standing in land 2,000 yrs ago, [23.0-24.6s] known as Judea, [24.6-27.0s] difficult province, [27.0-29.7s] stuck middle Roman Empire -->
+      <g class="scene" id="scene-4">
+        <!-- Scorching Desert Sky -->
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#judeaSky)"/>
+        <!-- Sun of the Levant -->
+        <circle cx="980" cy="170" r="70" fill="#ffffff" opacity="0.9"/>
+        <circle cx="980" cy="170" r="140" fill="#fef08a" opacity="0.3"/>
+
+        <!-- Rolling Judean Terraced Hills & Olive Trees -->
+        <path d="M-80,480 Q250,400 580,440 Q940,490 1380,420 L1380,750 L-80,750 Z" fill="url(#hillsGrad)"/>
+        <path d="M-80,560 Q420,500 880,540 L1380,520 L1380,750 L-80,750 Z" fill="#78350f"/>
+        <path d="M-80,640 Q620,590 1380,630 L1380,750 L-80,750 Z" fill="#451a03"/>
+
+        <!-- Roman Aqueduct / Provincial Fortification in Distance -->
+        <g transform="translate(140, 380)">
+          <rect x="0" y="0" width="400" height="24" fill="#a16207"/>
+          <rect x="30" y="24" width="22" height="60" fill="#a16207"/>
+          <rect x="130" y="24" width="22" height="60" fill="#a16207"/>
+          <rect x="230" y="24" width="22" height="60" fill="#a16207"/>
+          <rect x="330" y="24" width="22" height="60" fill="#a16207"/>
+          <!-- Arches -->
+          <path d="M52,38 Q81,10 110,38 Z" fill="#b45309"/>
+          <path d="M152,38 Q181,10 210,38 Z" fill="#b45309"/>
+          <path d="M252,38 Q281,10 310,38 Z" fill="#b45309"/>
+        </g>
+
+        <!-- Judean Rebel / Citizen Character (Center-Left) [Standing Firm] -->
+        <g class="char-bob" transform="translate(460, 440) scale(1.15)">
+          <!-- Legs in ancient linen wraps -->
+          <g class="leg-l-walk">
+            <rect x="26" y="58" width="13" height="46" rx="4" fill="#b45309"/>
+            <rect x="22" y="98" width="22" height="10" rx="3" fill="#78350f"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="44" y="58" width="13" height="46" rx="4" fill="#b45309"/>
+            <rect x="40" y="98" width="22" height="10" rx="3" fill="#78350f"/>
+          </g>
+          <!-- Traditional Judean Tunic & Shawl -->
+          <rect x="22" y="24" width="38" height="44" rx="6" fill="#0284c7"/>
+          <path d="M20,24 L48,24 L34,68 L18,68 Z" fill="#f8fafc" opacity="0.9"/> <!-- Tallit/fringed sash -->
+          <!-- Head & Headband Wrap -->
+          <circle cx="41" cy="12" r="14" fill="#fed7aa"/>
+          <path d="M26,10 Q41,-4 56,8 L56,14 Z" fill="#451a03"/>
+          <rect x="25" y="8" width="32" height="6" rx="2" fill="#ca8a04"/> <!-- Cloth wrap -->
+          <circle cx="46" cy="12" r="2.5" fill="#0f172a"/>
+          <!-- Expressive Arms: Crossing or Defiant -->
+          <g class="arm-l-gest">
+            <rect x="18" y="24" width="12" height="30" rx="4" fill="#0284c7"/>
+            <circle cx="24" cy="52" r="5" fill="#fed7aa"/>
+          </g>
+          <g class="arm-r-gest">
+            <rect x="48" y="24" width="12" height="30" rx="4" fill="#0284c7"/>
+            <circle cx="54" cy="52" r="5" fill="#fed7aa"/>
+          </g>
+        </g>
+
+        <!-- Fully Rigged Roman Centurion (Procurator Guard, Center-Right) -->
+        <g class="char-bob" transform="translate(740, 430) scale(1.2)">
+          <!-- Legs in Caligae Sandals -->
+          <g class="leg-l-walk">
+            <rect x="26" y="58" width="13" height="48" rx="4" fill="#fed7aa"/>
+            <rect x="22" y="98" width="22" height="10" rx="3" fill="#78350f"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="44" y="58" width="13" height="48" rx="4" fill="#fed7aa"/>
+            <rect x="40" y="98" width="22" height="10" rx="3" fill="#78350f"/>
+          </g>
+          <!-- Roman Muscle Armor & Red Imperial Cloak -->
+          <path d="M14,24 Q8,55 12,85 L28,85 L24,28 Z" fill="#991b1b"/>
+          <rect x="22" y="22" width="38" height="40" rx="6" fill="#eab308"/>
+          <!-- Galea Helmet with Centurion Plume -->
+          <circle cx="41" cy="10" r="14" fill="#fed7aa"/>
+          <circle cx="46" cy="9" r="2.5" fill="#0f172a"/>
+          <path d="M26,6 Q41,-10 56,6 L58,14 L24,14 Z" fill="#ca8a04"/>
+          <path d="M22,-8 Q41,-22 60,-8 L56,-2 L26,-2 Z" fill="#dc2626"/> <!-- Crest -->
+          <!-- Gladius Arm pointing assertively -->
+          <g class="arm-r-gest">
+            <rect x="48" y="24" width="12" height="30" rx="4" fill="#fed7aa"/>
+            <path d="M52,50 L78,35 L84,39 L54,58 Z" fill="#94a3b8"/> <!-- Sword blade -->
+            <circle cx="82" cy="37" r="4" fill="#ca8a04"/>
+          </g>
+          <!-- Scutum Shield in Left Arm -->
+          <g class="arm-l-gest">
+            <rect x="18" y="24" width="12" height="30" rx="4" fill="#fed7aa"/>
+            <rect x="2" y="15" width="24" height="55" rx="5" fill="#b91c1c" stroke="#facc15" stroke-width="2"/>
+            <circle cx="14" cy="42" r="5" fill="#facc15"/>
+          </g>
+        </g>
+
+        <!-- Procedural Roman Legion Auxiliary Host in Distance (JS Seeded) -->
+        <g id="judea-patrol-container"></g>
+
+        <!-- Big Provinicia Badge -->
+        <g transform="translate(640, 105)">
+          <rect x="-340" y="-45" width="680" height="90" rx="16" fill="#000" opacity="0.85" stroke="#f59e0b" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#fef08a" font-size="38">PROVINCIA IUDAEA (73 AD)</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#f87171" font-size="20">A NOTORIOUSLY DIFFICULT ROMAN PROVINCE</text>
+        </g>
+      </g>
+    </g>
+  </svg>
+
+  <!-- Atmospheric Canvas Particles (Desert Dust / Studio Sparks) -->
+  <canvas id="ambientCanvas" width="1280" height="720"></canvas>
+</div>
+
+<script>
+  /* ================= Deterministic Crowd Creation (Rule 6 & 8b) ================= */
+  let seed = 54321;
+  function seededRand() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
+
+  // Populate Scene 4 with Roman Cohort patrol (80 figures marching in background)
+  const patrolContainer = document.getElementById("judea-patrol-container");
+  const svgNS = "http://www.w3.org/2000/svg";
+  const soldierCount = 80;
+
+  for (let i = 0; i < soldierCount; i++) {
+    const row = Math.floor(i / 20);
+    const col = i % 20;
+    const g = document.createElementNS(svgNS, "g");
+
+    const x = 900 + (col * 18) - (row * 14) + (seededRand() * 4);
+    const y = 470 + (row * 24) + (seededRand() * 4);
+    const s = 0.42 + (row * 0.08);
+
+    g.setAttribute("transform", `translate(${x}, ${y}) scale(${s})`);
+
+    // Shield
+    const shield = document.createElementNS(svgNS, "rect");
+    shield.setAttribute("x", "-7");
+    shield.setAttribute("y", "-14");
+    shield.setAttribute("width", "14");
+    shield.setAttribute("height", "26");
+    shield.setAttribute("rx", "3");
+    shield.setAttribute("fill", "#dc2626");
+    shield.setAttribute("stroke", "#eab308");
+    shield.setAttribute("stroke-width", "1.5");
+
+    // Helmet
+    const helmet = document.createElementNS(svgNS, "circle");
+    helmet.setAttribute("cx", "0");
+    helmet.setAttribute("cy", "-20");
+    helmet.setAttribute("r", "5.5");
+    helmet.setAttribute("fill", "#ca8a04");
+
+    // Spear / Pilum
+    const spear = document.createElementNS(svgNS, "line");
+    spear.setAttribute("x1", "5");
+    spear.setAttribute("y1", "-34");
+    spear.setAttribute("x2", "5");
+    spear.setAttribute("y2", "12");
+    spear.setAttribute("stroke", "#475569");
+    spear.setAttribute("stroke-width", "2");
+
+    g.appendChild(spear);
+    g.appendChild(helmet);
+    g.appendChild(shield);
+    patrolContainer.appendChild(g);
+  }
+
+  /* ================= Atmospheric Canvas Particles ================= */
+  const canvas = document.getElementById("ambientCanvas");
+  const ctx = canvas.getContext("2d");
+  const PARTICLE_COUNT = 70;
+  const particles = [];
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: seededRand() * 1280,
+      y: seededRand() * 720,
+      vx: 0.05 + seededRand() * 0.12,
+      vy: -0.03 - seededRand() * 0.08,
+      r: 1.2 + seededRand() * 2.2,
+      alpha: 0.2 + seededRand() * 0.5
+    });
+  }
+
+  /* ================= Deterministic Clock Function (Rule 5 & 8) ================= */
+  // Merged short sentences into neighbouring scenes across exactly 30.0s (30,000ms):
+  // Scene 0: [0.0s - 3.1s]   (0 - 3100ms)     Politically charged themes
+  // Scene 1: [3.1s - 10.2s]  (3100 - 10200ms) Impartial reporting & no sides
+  // Scene 2: [10.2s - 16.0s] (10200 - 16000ms) Layers of context brought us to this moment
+  // Scene 3: [16.0s - 19.3s] (16000 - 19300ms) Rewind the clock
+  // Scene 4: [19.3s - 30.0s] (19300 - 30000ms) Judea 2,000 years ago in Roman Empire
+  const scenes = [
+    { id: "scene-0", start: 0,     end: 3100 },
+    { id: "scene-1", start: 3100,  end: 10200 },
+    { id: "scene-2", start: 10200, end: 16000 },
+    { id: "scene-3", start: 16000, end: 19300 },
+    { id: "scene-4", start: 19300, end: 30000 }
+  ];
+
+  const cameraRoot = document.getElementById("camera-root");
+  const clockHands = document.getElementById("clock-hands-group");
+  const rewindYearText = document.getElementById("rewind-year-text");
+
+  window.updateSceneTime = function(t_ms) {
+    const t = Math.max(0, Math.min(30000, t_ms));
+    const FADE = 400; // 0.4s cross-fade
+
+    // 1. Scene Visibility & Cross-fade (Deterministic)
+    scenes.forEach(sc => {
+      const el = document.getElementById(sc.id);
+      if (!el) return;
+
+      if (t < sc.start || t > sc.end) {
+        el.style.display = "none";
+        el.style.opacity = 0;
+      } else {
+        el.style.display = "inline";
+        let opacity = 1;
+        if (t - sc.start < FADE && sc.start !== 0) {
+          opacity = (t - sc.start) / FADE;
+        } else if (sc.end - t < FADE && sc.end !== 30000) {
+          opacity = (sc.end - t) / FADE;
+        }
+        el.style.opacity = opacity;
+      }
+    });
+
+    // 2. Slow Cinematic Camera Pan / Zoom across 30 seconds
+    const progress = t / 30000;
+    const camX = -progress * 48;
+    const camY = Math.sin(progress * Math.PI) * -12;
+    const camScale = 1.0 + (progress * 0.045);
+    cameraRoot.setAttribute("transform", `translate(${camX}, ${camY}) scale(${camScale})`);
+
+    // 3. Scene-Specific Deterministic Logic
+    // Scene 2: Layer blocks sliding into place
+    if (t >= 10200 && t <= 16000) {
+      const dt = t - 10200;
+      const topBlock = document.getElementById("context-layer-top");
+      const midBlock = document.getElementById("context-layer-mid");
+      const botBlock = document.getElementById("context-layer-bot");
+      if (topBlock) {
+        const off1 = Math.max(0, 80 - dt * 0.12);
+        topBlock.setAttribute("transform", `translate(${240 - off1}, 240)`);
+      }
+      if (midBlock) {
+        const off2 = Math.max(0, 80 - (dt - 400) * 0.12);
+        midBlock.setAttribute("transform", `translate(${240 - off2}, 335)`);
+      }
+      if (botBlock) {
+        const off3 = Math.max(0, 80 - (dt - 800) * 0.12);
+        botBlock.setAttribute("transform", `translate(${240 - off3}, 430)`);
+      }
+    }
+
+    // Scene 3: Rewind Clock rapid spin counter-clockwise & Year countdown
+    if (t >= 16000 && t <= 19300) {
+      const rewindProgress = (t - 16000) / 3300;
+      const angle = -rewindProgress * 1440; // 4 full rapid rotations
+      if (clockHands) {
+        clockHands.setAttribute("transform", `rotate(${angle})`);
+      }
+      if (rewindYearText) {
+        const currentYear = Math.round(2026 - rewindProgress * (2026 - 73));
+        rewindYearText.textContent = currentYear + (currentYear > 0 ? " AD" : " BC");
+      }
+    }
+
+    // Scene 4: Roman army patrol slow march
+    if (t >= 19300 && t <= 30000) {
+      const marchT = (t - 19300) * 0.015;
+      patrolContainer.setAttribute("transform", `translate(${-marchT}, 0)`);
+    }
+
+    // 4. Atmospheric Canvas Particles
+    ctx.clearRect(0, 0, 1280, 720);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const p = particles[i];
+      const px = (p.x + t * p.vx) % 1280;
+      const py = (p.y + t * p.vy + 720000) % 720;
+      const shimmer = Math.sin(t * 0.004 + i) * 1.5;
+
+      ctx.fillStyle = (t >= 19300) ? "#fed7aa" : "#38bdf8";
+      ctx.globalAlpha = p.alpha * (0.6 + 0.4 * Math.sin(t * 0.003 + i));
+      ctx.beginPath();
+      ctx.arc(px + shimmer, py, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+
+  // Initial render at t = 0
+  window.updateSceneTime(0);
+</script>
+</body>
+</html>

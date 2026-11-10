@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>2,000 Year History: Contested Geography</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #090a0f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #viewport {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    background: #000;
+    overflow: hidden;
+    box-shadow: 0 0 50px rgba(0,0,0,0.9);
+  }
+  svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+  }
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+    pointer-events: none;
+  }
+
+  /* Articulated Limb Rigging - Absolute Joint Transform Origins */
+  .arm-l-swing { transform-origin: 28px 40px; animation: armSwingL 0.7s infinite alternate ease-in-out; }
+  .arm-r-swing { transform-origin: 58px 40px; animation: armSwingR 0.7s infinite alternate ease-in-out; }
+  .leg-l-walk  { transform-origin: 32px 64px; animation: legWalkL 0.7s infinite alternate ease-in-out; }
+  .leg-r-walk  { transform-origin: 54px 64px; animation: legWalkR 0.7s infinite alternate ease-in-out; }
+  .character-bob { animation: charBob 0.35s infinite alternate ease-in-out; }
+
+  @keyframes armSwingL { from { transform: rotate(-24deg); } to { transform: rotate(26deg); } }
+  @keyframes armSwingR { from { transform: rotate(26deg); } to { transform: rotate(-24deg); } }
+  @keyframes legWalkL  { from { transform: rotate(22deg); } to { transform: rotate(-22deg); } }
+  @keyframes legWalkR  { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+  @keyframes charBob   { from { transform: translateY(0px); } to { transform: translateY(-3px); } }
+
+  /* Prop Animations */
+  .flag-flutter { transform-origin: 0px 40px; animation: flutter 1.1s infinite alternate ease-in-out; }
+  @keyframes flutter { from { transform: skewY(-4deg) scaleX(0.97); } to { transform: skewY(6deg) scaleX(1.02); } }
+
+  .text-label {
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    text-shadow: 3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 4px 12px rgba(0,0,0,0.8);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <svg id="stage" viewBox="0 0 1280 720">
+    <defs>
+      <!-- Gradients -->
+      <linearGradient id="skyDesert" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ea580c"/>
+        <stop offset="45%" stop-color="#f59e0b"/>
+        <stop offset="100%" stop-color="#fef08a"/>
+      </linearGradient>
+      <linearGradient id="skyModern" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0f172a"/>
+        <stop offset="60%" stop-color="#1e293b"/>
+        <stop offset="100%" stop-color="#334155"/>
+      </linearGradient>
+      <linearGradient id="medSeaGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#0284c7"/>
+        <stop offset="100%" stop-color="#0369a1"/>
+      </linearGradient>
+      <linearGradient id="landGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#d97706"/>
+        <stop offset="100%" stop-color="#78350f"/>
+      </linearGradient>
+      <linearGradient id="dangerGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#7f1d1d"/>
+        <stop offset="50%" stop-color="#b91c1c"/>
+        <stop offset="100%" stop-color="#450a0a"/>
+      </linearGradient>
+    </defs>
+
+    <g id="camera-root">
+      <!-- ================= SCENE 0: [0.0s - 7.7s] 2,000 YEAR HISTORY / CONTESTED GEOGRAPHY ================= -->
+      <g class="scene" id="scene-0">
+        <!-- Desert Skyline -->
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#skyDesert)"/>
+        <!-- Mediterranean Coastline & Ancient Land Relief -->
+        <path d="M-80,750 L-80,180 Q320,240 430,340 Q540,460 620,750 Z" fill="url(#medSeaGrad)"/>
+        <!-- Hills of Judea & Galilee -->
+        <path d="M380,750 Q560,420 840,400 Q1050,380 1380,480 L1380,750 Z" fill="url(#landGrad)"/>
+        <path d="M520,750 Q750,470 1020,490 L1380,620 L1380,750 Z" fill="#92400e"/>
+        <!-- Ancient Jerusalem City Citadel on Hilltop -->
+        <g transform="translate(730, 340)">
+          <polygon points="0,60 16,30 32,60" fill="#fbbf24"/>
+          <rect x="25" y="40" width="140" height="35" fill="#ca8a04"/>
+          <rect x="35" y="26" width="18" height="15" fill="#a16207"/>
+          <rect x="75" y="26" width="18" height="15" fill="#a16207"/>
+          <rect x="115" y="26" width="18" height="15" fill="#a16207"/>
+          <!-- Fortification rampart stones -->
+          <line x1="25" y1="55" x2="165" y2="55" stroke="#78350f" stroke-width="2"/>
+        </g>
+        <!-- Ancient Roman Legionary Sentinel (Guarding the Conquered Land) -->
+        <g class="character-bob" transform="translate(480, 480)">
+          <!-- Legs -->
+          <g class="leg-l-walk">
+            <rect x="27" y="60" width="12" height="42" rx="4" fill="#b45309"/>
+            <rect x="23" y="94" width="20" height="10" rx="3" fill="#78350f"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="47" y="60" width="12" height="42" rx="4" fill="#b45309"/>
+            <rect x="43" y="94" width="20" height="10" rx="3" fill="#78350f"/>
+          </g>
+          <!-- Torso & Lorica Segmentata -->
+          <rect x="24" y="28" width="38" height="38" rx="6" fill="#dc2626"/>
+          <path d="M24,34 L62,34 L60,56 L26,56 Z" fill="#94a3b8"/>
+          <line x1="24" y1="42" x2="62" y2="42" stroke="#475569" stroke-width="2"/>
+          <line x1="25" y1="50" x2="61" y2="50" stroke="#475569" stroke-width="2"/>
+          <!-- Head & Galea Helmet -->
+          <circle cx="43" cy="16" r="14" fill="#fed7aa"/>
+          <circle cx="47" cy="14" r="2.5" fill="#0f172a"/>
+          <path d="M29,12 Q43,-2 57,12 L59,20 L27,20 Z" fill="#eab308"/>
+          <path d="M37,-4 Q43,-12 49,-4 L45,6 Z" fill="#dc2626"/>
+          <!-- Spear (Pilum) Arm -->
+          <g class="arm-r-swing">
+            <rect x="52" y="30" width="11" height="30" rx="5" fill="#fed7aa"/>
+            <line x1="57" y1="-25" x2="57" y2="75" stroke="#334155" stroke-width="3"/>
+            <polygon points="53,-25 57,-42 61,-25" fill="#94a3b8"/>
+          </g>
+          <!-- Left Arm holding Shield -->
+          <g class="arm-l-swing">
+            <rect x="22" y="30" width="10" height="28" rx="5" fill="#fed7aa"/>
+            <rect x="6" y="24" width="22" height="42" rx="5" fill="#b91c1c" stroke="#facc15" stroke-width="2"/>
+          </g>
+        </g>
+
+        <!-- Big Timed Titles -->
+        <g transform="translate(640, 110)">
+          <text class="text-label" x="0" y="0" text-anchor="middle" fill="#fef08a" font-size="44">2,000 YEARS OF CONTESTED HISTORY</text>
+          <text class="text-label" x="0" y="44" text-anchor="middle" fill="#ffffff" font-size="24">THE CROSSROADS OF THREE CONTINENTS</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 1: [7.7s - 12.3s] IMPOSSIBLE HISTORICAL COMEBACK ================= -->
+      <g class="scene" id="scene-1">
+        <rect x="-100" y="-100" width="1480" height="920" fill="#0f172a"/>
+        <!-- Rising Dawn Sunburst representing Renewal / Comeback -->
+        <circle cx="640" cy="520" r="380" fill="#ea580c" opacity="0.3"/>
+        <circle cx="640" cy="520" r="260" fill="#f59e0b" opacity="0.4"/>
+        <circle cx="640" cy="520" r="140" fill="#fef08a" opacity="0.9"/>
+        <!-- Ancient Desert Ruins transitioning into Modern Revitalized Horizon -->
+        <path d="M-80,680 L250,560 L500,590 L750,540 L1380,680 L1380,750 L-80,750 Z" fill="#334155"/>
+        <path d="M-80,620 L300,640 L700,580 L1380,640 L1380,750 L-80,750 Z" fill="#1e293b"/>
+
+        <!-- Sprouting Olive Branch / Menorah Symbol of Survival -->
+        <g transform="translate(640, 360)">
+          <path d="M-50,60 Q0,-40 50,60" fill="none" stroke="#22c55e" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="-35" cy="20" r="8" fill="#16a34a"/>
+          <circle cx="0" cy="-20" r="9" fill="#16a34a"/>
+          <circle cx="35" cy="20" r="8" fill="#16a34a"/>
+        </g>
+
+        <!-- Dynamic Comeback Crowd (Returning People generated via JS) -->
+        <g id="comeback-crowd-container"></g>
+
+        <!-- Comeback Badges -->
+        <g transform="translate(640, 120)">
+          <rect x="-310" y="-45" width="620" height="90" rx="16" fill="#000" opacity="0.75"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#38bdf8" font-size="42">THE IMPOSSIBLE COMEBACK</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#fef08a" font-size="22">DISPERSAL, EXILE & REBIRTH ACROSS MILLENNIA</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 2: [12.3s - 18.4s] CENTER OF WORLD'S MOST DANGEROUS CONFLICTS ================= -->
+      <g class="scene" id="scene-2">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#skyModern)"/>
+        <!-- Dramatic Alert & Radar Backdrop -->
+        <circle cx="640" cy="380" r="320" fill="none" stroke="#dc2626" stroke-width="2" opacity="0.4" stroke-dasharray="10,8"/>
+        <circle cx="640" cy="380" r="220" fill="none" stroke="#ef4444" stroke-width="2.5" opacity="0.6"/>
+        <circle cx="640" cy="380" r="100" fill="none" stroke="#f87171" stroke-width="3" opacity="0.8"/>
+        <line x1="640" y1="50" x2="640" y2="700" stroke="#dc2626" stroke-width="1.5" opacity="0.4"/>
+        <line x1="280" y1="380" x2="1000" y2="380" stroke="#dc2626" stroke-width="1.5" opacity="0.4"/>
+
+        <!-- Barbed Wire & Concrete Defense Wall Barrier -->
+        <g transform="translate(0, 480)">
+          <rect x="-50" y="60" width="1400" height="180" fill="#475569"/>
+          <!-- Concrete Seams -->
+          <line x1="180" y1="60" x2="180" y2="240" stroke="#1e293b" stroke-width="3"/>
+          <line x1="380" y1="60" x2="380" y2="240" stroke="#1e293b" stroke-width="3"/>
+          <line x1="580" y1="60" x2="580" y2="240" stroke="#1e293b" stroke-width="3"/>
+          <line x1="780" y1="60" x2="780" y2="240" stroke="#1e293b" stroke-width="3"/>
+          <line x1="980" y1="60" x2="980" y2="240" stroke="#1e293b" stroke-width="3"/>
+          <line x1="1180" y1="60" x2="1180" y2="240" stroke="#1e293b" stroke-width="3"/>
+          <!-- Razor Wire Coil -->
+          <path d="M-20,55 Q50,25 120,55 Q190,85 260,55 Q330,25 400,55 Q470,85 540,55 Q610,25 680,55 Q750,85 820,55 Q890,25 960,55 Q1030,85 1100,55 Q1170,25 1240,55 Q1310,85 1380,55" fill="none" stroke="#cbd5e1" stroke-width="3"/>
+        </g>
+
+        <!-- Warning Flashing Beacon Indicator -->
+        <polygon points="640,240 670,295 610,295" fill="#facc15" stroke="#000" stroke-width="4"/>
+        <text x="640" y="286" font-family="Arial Black" font-size="28" font-weight="bold" text-anchor="middle" fill="#000">!</text>
+
+        <!-- High-Stakes Conflict Titles -->
+        <g transform="translate(640, 110)">
+          <rect x="-340" y="-45" width="680" height="90" rx="16" fill="#7f1d1d" opacity="0.9" stroke="#ef4444" stroke-width="3"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#ffffff" font-size="38">GLOBAL FLASHPOINT TODAY</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#fef08a" font-size="20">THE WORLD'S MOST DANGEROUS DISPUTE</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 3: [18.4s - 23.1s] TINY STRIP OF LAND / FOCAL POINT ================= -->
+      <g class="scene" id="scene-3">
+        <rect x="-100" y="-100" width="1480" height="920" fill="#0b1329"/>
+        <!-- Macro Stylized World Map with Zoom Reticle on Mediterranean Levant -->
+        <path d="M120,200 Q280,160 480,240 Q600,320 620,440 L450,580 L180,520 Z" fill="#1e293b"/> <!-- Europe/Med North -->
+        <path d="M420,540 Q620,460 760,560 Q880,720 720,780 L380,760 Z" fill="#1e293b"/> <!-- Africa/Sinai -->
+        <path d="M720,380 Q980,320 1200,420 L1150,680 L820,560 Z" fill="#1e293b"/> <!-- Asia/Arabia -->
+
+        <!-- Glowing Focal Target on the Tiny Strip -->
+        <g id="map-target-group" transform="translate(640, 420)">
+          <!-- Concentric Pulsing Rings -->
+          <circle cx="0" cy="0" r="70" fill="none" stroke="#f59e0b" stroke-width="3" stroke-dasharray="8,6"/>
+          <circle cx="0" cy="0" r="45" fill="none" stroke="#f59e0b" stroke-width="2"/>
+          <!-- The Tiny Strip Highlight -->
+          <path d="M-8,-26 Q-3,-4 -6,22 Q-10,32 -8,40 L6,38 Q8,20 4,-6 Q1,-24 8,-32 Z" fill="#e11d48" stroke="#ffffff" stroke-width="2.5"/>
+          <!-- Reticle crosshairs -->
+          <line x1="-90" y1="0" x2="-20" y2="0" stroke="#f59e0b" stroke-width="3"/>
+          <line x1="20" y1="0" x2="90" y2="0" stroke="#f59e0b" stroke-width="3"/>
+          <line x1="0" y1="-90" x2="0" y2="-20" stroke="#f59e0b" stroke-width="3"/>
+          <line x1="0" y1="20" x2="0" y2="90" stroke="#f59e0b" stroke-width="3"/>
+        </g>
+
+        <!-- Measurement Dimension Bracket -->
+        <g transform="translate(760, 420)">
+          <path d="M10,-40 L30,-40 L30,40 L10,40" fill="none" stroke="#fef08a" stroke-width="3"/>
+          <text class="text-label" x="42" y="6" fill="#fef08a" font-size="22">~150 MILES</text>
+        </g>
+
+        <g transform="translate(640, 110)">
+          <rect x="-300" y="-45" width="600" height="90" rx="16" fill="#000" opacity="0.8"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#f43f5e" font-size="40">A TINY STRIP OF LAND</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#ffffff" font-size="20">FOCAL POINT OF HUMAN HISTORY</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 4: [23.1s - 30.0s] UNPACKING OVERLAPPING LAYERS (EMPIRE, SURVIVAL, PAIN) ================= -->
+      <g class="scene" id="scene-4">
+        <rect x="-100" y="-100" width="1480" height="920" fill="#0f172a"/>
+
+        <!-- Three Archeological Geological Cutaway Layers (Unpacking the Layers) -->
+        <!-- Layer 1: EMPIRE (Top) -->
+        <g id="layer-empire" transform="translate(180, 220)">
+          <rect x="0" y="0" width="920" height="100" rx="12" fill="#78350f" stroke="#d97706" stroke-width="3"/>
+          <path d="M20,100 L40,20 L60,100 M80,100 L100,20 L120,100" stroke="#f59e0b" stroke-width="4" fill="none"/> <!-- Pillars -->
+          <text class="text-label" x="160" y="60" fill="#fef08a" font-size="34">LAYER 1: EMPIRE</text>
+          <text class="text-label" x="900" y="60" text-anchor="end" fill="#fde68a" font-size="20">ROMANS • BYZANTINES • OTTOMANS • BRITISH</text>
+        </g>
+
+        <!-- Layer 2: SURVIVAL (Middle) -->
+        <g id="layer-survival" transform="translate(180, 350)">
+          <rect x="0" y="0" width="920" height="100" rx="12" fill="#14532d" stroke="#22c55e" stroke-width="3"/>
+          <!-- Vector Seedling / Rebuilding symbol -->
+          <path d="M40,75 Q60,30 80,75" fill="none" stroke="#4ade80" stroke-width="6"/>
+          <circle cx="60" cy="45" r="8" fill="#86efac"/>
+          <text class="text-label" x="160" y="60" fill="#86efac" font-size="34">LAYER 2: SURVIVAL</text>
+          <text class="text-label" x="900" y="60" text-anchor="end" fill="#bbf7d0" font-size="20">CULTURAL MEMORY & UNBROKEN RESILIENCE</text>
+        </g>
+
+        <!-- Layer 3: PAIN (Bottom Bedrock) -->
+        <g id="layer-pain" transform="translate(180, 480)">
+          <rect x="0" y="0" width="920" height="100" rx="12" fill="#7f1d1d" stroke="#ef4444" stroke-width="3"/>
+          <!-- Crack / Fracture Vector -->
+          <path d="M30,50 L55,25 L70,75 L95,40" fill="none" stroke="#fca5a5" stroke-width="5" stroke-linejoin="round"/>
+          <text class="text-label" x="160" y="60" fill="#fca5a5" font-size="34">LAYER 3: PAIN</text>
+          <text class="text-label" x="900" y="60" text-anchor="end" fill="#fecaca" font-size="20">WARS, DISPLACEMENT & GENERATIONAL GRIEF</text>
+        </g>
+
+        <!-- The Historian Animator Host Character Unpacking with Pointer/Tablet -->
+        <g class="character-bob" transform="translate(1120, 390)">
+          <!-- Legs -->
+          <g class="leg-l-walk">
+            <rect x="25" y="62" width="13" height="50" rx="5" fill="#1e293b"/>
+            <rect x="22" y="106" width="22" height="10" rx="4" fill="#64748b"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="45" y="62" width="13" height="50" rx="5" fill="#1e293b"/>
+            <rect x="42" y="106" width="22" height="10" rx="4" fill="#64748b"/>
+          </g>
+          <!-- Smart Casual Blazer / Tunic -->
+          <rect x="22" y="24" width="38" height="42" rx="7" fill="#0284c7"/>
+          <polygon points="32,24 41,40 50,24" fill="#f8fafc"/> <!-- Shirt Collar -->
+          <!-- Head -->
+          <circle cx="41" cy="12" r="14" fill="#fed7aa"/>
+          <path d="M28,12 Q41,-6 54,6 L54,14 Z" fill="#334155"/> <!-- Hair -->
+          <circle cx="46" cy="12" r="2.5" fill="#0f172a"/>
+          <!-- Articulated Arm with Pointer pointing to the layers -->
+          <g class="arm-l-swing">
+            <rect x="18" y="26" width="12" height="34" rx="5" fill="#0284c7"/>
+            <line x1="20" y1="56" x2="-55" y2="20" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"/>
+          </g>
+          <!-- Arm holding Notebook -->
+          <g class="arm-r-swing">
+            <rect x="48" y="26" width="11" height="30" rx="5" fill="#0284c7"/>
+            <rect x="52" y="44" width="20" height="26" rx="3" fill="#f8fafc" stroke="#334155" stroke-width="2"/>
+          </g>
+        </g>
+
+        <!-- Final Scene Title -->
+        <g transform="translate(640, 110)">
+          <rect x="-310" y="-45" width="620" height="90" rx="16" fill="#000" opacity="0.85"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#fbbf24" font-size="38">UNPACKING THE LAYERS</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#ffffff" font-size="22">SURVIVAL • EMPIRE • PAIN</text>
+        </g>
+      </g>
+    </g>
+  </svg>
+
+  <!-- Atmospheric Canvas Dust & Ambient Sparkles -->
+  <canvas id="ambientCanvas" width="1280" height="720"></canvas>
+</div>
+
+<script>
+  /* ================= Deterministic Crowd Creation (Rule 6 & 8b) ================= */
+  // Pseudo-random generator with fixed seed
+  let seed = 98765;
+  function seededRand() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
+
+  // Populate Scene 1 with 90 historical comeback figures arriving across generations
+  const comebackContainer = document.getElementById("comeback-crowd-container");
+  const svgNS = "http://www.w3.org/2000/svg";
+  const figureCount = 90;
+
+  for (let i = 0; i < figureCount; i++) {
+    const row = Math.floor(i / 18);
+    const col = i % 18;
+    const g = document.createElementNS(svgNS, "g");
+
+    const x = 200 + (col * 50) + (seededRand() * 12);
+    const y = 560 + (row * 24) + (seededRand() * 6);
+    const s = 0.45 + (row * 0.12);
+
+    g.setAttribute("transform", `translate(${x}, ${y}) scale(${s})`);
+
+    // Head
+    const head = document.createElementNS(svgNS, "circle");
+    head.setAttribute("cx", "0");
+    head.setAttribute("cy", "-24");
+    head.setAttribute("r", "7");
+    head.setAttribute("fill", "#fed7aa");
+
+    // Cloak / Robe body
+    const body = document.createElementNS(svgNS, "path");
+    const colors = ["#0284c7", "#d97706", "#16a34a", "#dc2626", "#475569", "#7c3aed"];
+    const chosenColor = colors[Math.floor(seededRand() * colors.length)];
+    body.setAttribute("d", "M-10,0 L10,0 L7,-18 L-7,-18 Z");
+    body.setAttribute("fill", chosenColor);
+
+    // Legs
+    const legs = document.createElementNS(svgNS, "line");
+    legs.setAttribute("x1", "-3");
+    legs.setAttribute("y1", "0");
+    legs.setAttribute("x2", "-3");
+    legs.setAttribute("y2", "12");
+    legs.setAttribute("stroke", "#0f172a");
+    legs.setAttribute("stroke-width", "3");
+
+    const legsR = document.createElementNS(svgNS, "line");
+    legsR.setAttribute("x1", "3");
+    legsR.setAttribute("y1", "0");
+    legsR.setAttribute("x2", "3");
+    legsR.setAttribute("y2", "12");
+    legsR.setAttribute("stroke", "#0f172a");
+    legsR.setAttribute("stroke-width", "3");
+
+    g.appendChild(legs);
+    g.appendChild(legsR);
+    g.appendChild(body);
+    g.appendChild(head);
+    comebackContainer.appendChild(g);
+  }
+
+  /* ================= Atmospheric Canvas Particles ================= */
+  const canvas = document.getElementById("ambientCanvas");
+  const ctx = canvas.getContext("2d");
+  const PARTICLE_COUNT = 70;
+  const particles = [];
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: seededRand() * 1280,
+      y: seededRand() * 720,
+      speedX: 0.05 + seededRand() * 0.12,
+      speedY: -0.04 - seededRand() * 0.08,
+      r: 1.2 + seededRand() * 2.2,
+      alpha: 0.25 + seededRand() * 0.5
+    });
+  }
+
+  /* ================= Deterministic Clock Function (Rule 5 & 8) ================= */
+  // Merged short sentences into neighbouring scenes:
+  // Scene 0: [0.0s - 7.7s] (0 - 7700ms) Contested 2000-year geography
+  // Scene 1: [7.7s - 12.3s] (7700 - 12300ms) Impossible historical comeback
+  // Scene 2: [12.3s - 18.4s] (12300 - 18400ms) Center of dangerous conflicts today
+  // Scene 3: [18.4s - 23.1s] (18400 - 23100ms) Tiny strip of land / focal point
+  // Scene 4: [23.1s - 30.0s] (23100 - 30000ms) Unpack overlapping layers (Empire, Survival, Pain)
+  const scenes = [
+    { id: "scene-0", start: 0,     end: 7700 },
+    { id: "scene-1", start: 7700,  end: 12300 },
+    { id: "scene-2", start: 12300, end: 18400 },
+    { id: "scene-3", start: 18400, end: 23100 },
+    { id: "scene-4", start: 23100, end: 30000 }
+  ];
+
+  const cameraRoot = document.getElementById("camera-root");
+
+  window.updateSceneTime = function(t_ms) {
+    const t = Math.max(0, Math.min(30000, t_ms));
+    const FADE = 400; // 0.4s clean crossfade
+
+    // 1. Scene Visibility & Cross-fade (Deterministic)
+    scenes.forEach(sc => {
+      const el = document.getElementById(sc.id);
+      if (!el) return;
+
+      if (t < sc.start || t > sc.end) {
+        el.style.display = "none";
+        el.style.opacity = 0;
+      } else {
+        el.style.display = "inline";
+        let opacity = 1;
+        if (t - sc.start < FADE && sc.start !== 0) {
+          opacity = (t - sc.start) / FADE;
+        } else if (sc.end - t < FADE && sc.end !== 30000) {
+          opacity = (sc.end - t) / FADE;
+        }
+        el.style.opacity = opacity;
+      }
+    });
+
+    // 2. Slow Cinematic Camera Pan / Zoom across 30 seconds
+    const progress = t / 30000;
+    const camX = -progress * 50;
+    const camY = Math.sin(progress * Math.PI) * -12;
+    const camScale = 1.0 + (progress * 0.04);
+    cameraRoot.setAttribute("transform", `translate(${camX}, ${camY}) scale(${camScale})`);
+
+    // 3. Deterministic Motion on Elements
+    // Scene 1: Comeback crowd marching upward
+    if (t >= 7700 && t <= 12300) {
+      const walkT = (t - 7700) * 0.02;
+      comebackContainer.setAttribute("transform", `translate(0, ${-walkT})`);
+    }
+
+    // Scene 3: Reticle Pulsing
+    const mapTarget = document.getElementById("map-target-group");
+    if (mapTarget && t >= 18400 && t <= 23100) {
+      const pulse = 1.0 + Math.sin((t - 18400) * 0.008) * 0.08;
+      mapTarget.setAttribute("transform", `translate(640, 420) scale(${pulse})`);
+    }
+
+    // Scene 4: Staggered Layers unpacking reveal
+    if (t >= 23100) {
+      const unpackT = t - 23100;
+      const lEmpire = document.getElementById("layer-empire");
+      const lSurvival = document.getElementById("layer-survival");
+      const lPain = document.getElementById("layer-pain");
+
+      if (lEmpire) {
+        const offsetE = Math.max(0, 100 - unpackT * 0.15);
+        lEmpire.setAttribute("transform", `translate(${180 - offsetE}, 220)`);
+      }
+      if (lSurvival) {
+        const offsetS = Math.max(0, 100 - (unpackT - 600) * 0.15);
+        lSurvival.setAttribute("transform", `translate(${180 - offsetS}, 350)`);
+      }
+      if (lPain) {
+        const offsetP = Math.max(0, 100 - (unpackT - 1200) * 0.15);
+        lPain.setAttribute("transform", `translate(${180 - offsetP}, 480)`);
+      }
+    }
+
+    // 4. Atmospheric Particles on Canvas
+    ctx.clearRect(0, 0, 1280, 720);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const p = particles[i];
+      const px = (p.x + t * p.speedX) % 1280;
+      const py = (p.y + t * p.speedY + 720000) % 720;
+      const shimmer = Math.sin(t * 0.004 + i) * 1.5;
+
+      ctx.fillStyle = (t >= 12300 && t <= 18400) ? "#ef4444" : "#fef08a";
+      ctx.globalAlpha = p.alpha * (0.6 + 0.4 * Math.sin(t * 0.003 + i));
+      ctx.beginPath();
+      ctx.arc(px + shimmer, py, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+
+  // Initial draw
+  window.updateSceneTime(0);
+</script>
+</body>
+</html>

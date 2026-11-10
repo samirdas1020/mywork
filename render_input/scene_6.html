@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Herod's Mega Projects - The Temple Mount & Caesarea</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #090a0f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #viewport {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    background: #000;
+    overflow: hidden;
+    box-shadow: 0 0 50px rgba(0,0,0,0.9);
+  }
+  svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+  }
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+    pointer-events: none;
+  }
+
+  /* Articulated Limb Rigging - absolute pixel joint origins */
+  .arm-l-gest  { transform-origin: 26px 36px; animation: gestL 1.2s infinite alternate ease-in-out; }
+  .arm-r-gest  { transform-origin: 58px 36px; animation: gestR 1.2s infinite alternate ease-in-out; }
+  .leg-l-walk  { transform-origin: 32px 64px; animation: walkL 0.7s infinite alternate ease-in-out; }
+  .leg-r-walk  { transform-origin: 52px 64px; animation: walkR 0.7s infinite alternate ease-in-out; }
+  .builder-arm { transform-origin: 54px 38px; animation: hammer 0.75s infinite alternate ease-in-out; }
+  .char-bob    { animation: bob 0.35s infinite alternate ease-in-out; }
+
+  @keyframes gestL { from { transform: rotate(-25deg); } to { transform: rotate(15deg); } }
+  @keyframes gestR { from { transform: rotate(15deg); } to { transform: rotate(-25deg); } }
+  @keyframes walkL { from { transform: rotate(-18deg); } to { transform: rotate(18deg); } }
+  @keyframes walkR { from { transform: rotate(18deg); } to { transform: rotate(-18deg); } }
+  @keyframes hammer { from { transform: rotate(10deg); } to { transform: rotate(-45deg); } }
+  @keyframes bob { from { transform: translateY(0px); } to { transform: translateY(-3.5px); } }
+
+  /* Sea waves rocking */
+  .ship-rock { transform-origin: 100px 80px; animation: shipRock 2.4s infinite alternate ease-in-out; }
+  @keyframes shipRock { from { transform: rotate(-4deg) translateY(-3px); } to { transform: rotate(4deg) translateY(3px); } }
+
+  .text-label {
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    text-shadow: 3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 4px 12px rgba(0,0,0,0.85);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <svg id="stage" viewBox="0 0 1280 720">
+    <defs>
+      <!-- Gradients -->
+      <linearGradient id="skyJerusalem" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#b45309"/>
+        <stop offset="50%" stop-color="#f59e0b"/>
+        <stop offset="100%" stop-color="#fef08a"/>
+      </linearGradient>
+      <linearGradient id="skySea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0284c7"/>
+        <stop offset="60%" stop-color="#38bdf8"/>
+        <stop offset="100%" stop-color="#bae6fd"/>
+      </linearGradient>
+      <linearGradient id="medSeaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0284c7"/>
+        <stop offset="100%" stop-color="#082f49"/>
+      </linearGradient>
+      <linearGradient id="pozzolanaGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#64748b"/>
+        <stop offset="50%" stop-color="#475569"/>
+        <stop offset="100%" stop-color="#334155"/>
+      </linearGradient>
+      <linearGradient id="templeGold" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fef08a"/>
+        <stop offset="50%" stop-color="#facc15"/>
+        <stop offset="100%" stop-color="#ca8a04"/>
+      </linearGradient>
+    </defs>
+
+    <g id="camera-root">
+      <!-- ================= SCENE 0: [0.0s - 1.5s] YOU JUST DISAPPEAR ================= -->
+      <g class="scene" id="scene-0">
+        <rect x="-100" y="-100" width="1480" height="920" fill="#020617"/>
+        <!-- Ominous Dark Prison Dungeon / Trapdoor Void -->
+        <g transform="translate(640, 420)">
+          <ellipse cx="0" cy="80" rx="260" ry="60" fill="#0f172a" stroke="#ef4444" stroke-width="3" stroke-dasharray="12,8"/>
+          <!-- Stone floor -->
+          <line x1="-500" y1="80" x2="-260" y2="80" stroke="#334155" stroke-width="6"/>
+          <line x1="260" y1="80" x2="500" y2="80" stroke="#334155" stroke-width="6"/>
+        </g>
+        <!-- Vanishing Dissident Silhouette -->
+        <g id="dissolve-char" transform="translate(640, 390) scale(1.3)">
+          <circle cx="0" cy="-20" r="16" fill="#64748b"/>
+          <rect x="-15" y="-4" width="30" height="48" rx="6" fill="#334155"/>
+          <line x1="-8" y1="44" x2="-8" y2="80" stroke="#1e293b" stroke-width="6"/>
+          <line x1="8" y1="44" x2="8" y2="80" stroke="#1e293b" stroke-width="6"/>
+          <!-- Smoke Puff Puffs -->
+          <circle cx="-18" cy="-5" r="12" fill="#475569" opacity="0.6"/>
+          <circle cx="18" cy="10" r="14" fill="#475569" opacity="0.6"/>
+          <circle cx="0" cy="25" r="18" fill="#475569" opacity="0.6"/>
+        </g>
+        <g transform="translate(640, 140)">
+          <rect x="-260" y="-45" width="520" height="90" rx="16" fill="#000" opacity="0.9" stroke="#ef4444" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#ef4444" font-size="40">"AND YOU JUST DISAPPEAR"</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#94a3b8" font-size="20">FATE OF HEROD'S SUSPECTED RIVALS</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 1: [1.5s - 10.7s] BUYING LOVE THROUGH MEGA PROJECTS ================= -->
+      <!-- Timed: [1.5-4.3s] historical records show, [4.3-6.6s] buy love of people, [6.6-9.4s] mind-boggling construction, [9.4-10.7s] massive projects -->
+      <g class="scene" id="scene-1">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#skyJerusalem)"/>
+        <!-- Rising Golden Megastructures on Horizon -->
+        <polygon points="120,480 200,320 280,480" fill="#78350f" opacity="0.6"/>
+        <rect x="260" y="360" width="160" height="180" fill="#92400e" opacity="0.6"/>
+        <polygon points="400,420 520,280 640,420" fill="#78350f" opacity="0.6"/>
+        <!-- City Scaffolding & Wooden Cranes -->
+        <g transform="translate(880, 290)">
+          <line x1="0" y1="240" x2="0" y2="0" stroke="#78350f" stroke-width="6"/>
+          <line x1="-50" y1="20" x2="60" y2="20" stroke="#78350f" stroke-width="5"/>
+          <line x1="60" y1="20" x2="60" y2="120" stroke="#451a03" stroke-width="2"/>
+          <rect x="48" y="120" width="24" height="24" rx="3" fill="#cbd5e1"/> <!-- Cut ashlar block -->
+        </g>
+        <path d="M-80,560 L1380,560 L1380,750 L-80,750 Z" fill="#78350f"/>
+
+        <!-- King Herod Overseeing Construction (Left) -->
+        <g class="char-bob" transform="translate(280, 390) scale(1.35)">
+          <g class="leg-l-walk">
+            <rect x="26" y="58" width="13" height="48" rx="4" fill="#fed7aa"/>
+            <rect x="22" y="98" width="22" height="10" rx="3" fill="#ca8a04"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="44" y="58" width="13" height="48" rx="4" fill="#fed7aa"/>
+            <rect x="40" y="98" width="22" height="10" rx="3" fill="#ca8a04"/>
+          </g>
+          <rect x="20" y="22" width="42" height="46" rx="6" fill="#6b21a8"/>
+          <polygon points="32,22 41,38 50,22" fill="#facc15"/>
+          <circle cx="41" cy="11" r="14" fill="#fed7aa"/>
+          <path d="M28,12 Q41,26 54,12 L54,18 Q41,30 28,18 Z" fill="#1e293b"/>
+          <circle cx="46" cy="10" r="2.5" fill="#0f172a"/>
+          <polygon points="26,6 31,-8 37,2 41,-10 45,2 51,-8 56,6" fill="#facc15"/>
+          <g class="arm-l-gest">
+            <rect x="16" y="22" width="12" height="30" rx="4" fill="#6b21a8"/>
+            <!-- Blueprint Architecture Scroll -->
+            <rect x="6" y="26" width="35" height="14" rx="4" fill="#fef08a" stroke="#ca8a04"/>
+          </g>
+          <g class="arm-r-gest">
+            <rect x="52" y="22" width="12" height="30" rx="4" fill="#6b21a8"/>
+            <circle cx="58" cy="50" r="5" fill="#fed7aa"/>
+          </g>
+        </g>
+
+        <!-- Judean Masons & Laborers (JS Generated Crowd) -->
+        <g id="masons-crowd-container"></g>
+
+        <!-- Titles -->
+        <g transform="translate(640, 105)">
+          <rect x="-330" y="-45" width="660" height="90" rx="16" fill="#000" opacity="0.85" stroke="#facc15" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#facc15" font-size="38">BUYING LOVE WITH MONUMENTS</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#ffffff" font-size="20">MIND-BOGGLING CONSTRUCTION PROJECTS</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 2: [10.7s - 16.3s] DOUBLED THE TEMPLE MOUNT ================= -->
+      <!-- Timed: [10.7-13.4s] doubled size Temple Mount Jerusalem, [13.4-16.3s] absolute holiest spot for Jews -->
+      <g class="scene" id="scene-2">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#skyJerusalem)"/>
+        <!-- Grand Sun over Jerusalem -->
+        <circle cx="640" cy="220" r="140" fill="#ffffff" opacity="0.85"/>
+        <circle cx="640" cy="220" r="220" fill="#fef08a" opacity="0.25"/>
+
+        <!-- The Colossal Temple Mount Platform Expansion (Animated Expansion Block) -->
+        <g id="temple-mount-platform" transform="translate(640, 480)">
+          <!-- Giant Ashlar Retaining Walls (Western Wall base) -->
+          <rect id="platform-rect" x="-450" y="0" width="900" height="180" rx="4" fill="#ca8a04" stroke="#78350f" stroke-width="4"/>
+          <!-- Stone blocks texture pattern -->
+          <line x1="-450" y1="45" x2="450" y2="45" stroke="#78350f" stroke-width="2"/>
+          <line x1="-450" y1="90" x2="450" y2="90" stroke="#78350f" stroke-width="2"/>
+          <line x1="-450" y1="135" x2="450" y2="135" stroke="#78350f" stroke-width="2"/>
+
+          <!-- Herod's Rebuilt Second Temple Sanctuary in Center -->
+          <g transform="translate(0, -120)">
+            <!-- Royal Portico / Stoas -->
+            <rect x="-380" y="80" width="760" height="40" fill="#e2e8f0"/>
+            <!-- Holy of Holies Sanctuary -->
+            <rect x="-110" y="-60" width="220" height="140" fill="#f8fafc" stroke="#ca8a04" stroke-width="4"/>
+            <!-- Golden Front Facade -->
+            <polygon points="-120,-60 0,-120 120,-60" fill="url(#templeGold)"/>
+            <rect x="-40" y="-10" width="80" height="90" fill="#ca8a04"/>
+            <!-- Pillars -->
+            <rect x="-85" y="-50" width="16" height="130" fill="#ca8a04"/>
+            <rect x="69" y="-50" width="16" height="130" fill="#ca8a04"/>
+          </g>
+        </g>
+
+        <!-- Worshippers / Priests in Foreground in Reverence -->
+        <g class="char-bob" transform="translate(240, 520) scale(1.1)">
+          <rect x="20" y="24" width="36" height="50" rx="6" fill="#f8fafc"/>
+          <circle cx="38" cy="12" r="13" fill="#fed7aa"/>
+          <path d="M26,10 Q38,-4 50,6 L50,14 Z" fill="#451a03"/>
+          <line x1="16" y1="40" x2="4" y2="10" stroke="#fed7aa" stroke-width="5" stroke-linecap="round"/>
+          <line x1="60" y1="40" x2="72" y2="10" stroke="#fed7aa" stroke-width="5" stroke-linecap="round"/>
+        </g>
+
+        <!-- Titles & "2X SIZE" Metric Callout -->
+        <g transform="translate(640, 100)">
+          <rect x="-320" y="-45" width="640" height="90" rx="16" fill="#000" opacity="0.85" stroke="#facc15" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#facc15" font-size="38">DOUBLED THE TEMPLE MOUNT</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#38bdf8" font-size="22">JERUSALEM'S HOLIEST SANCTUARY EXPANDED (2X)</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 3: [16.3s - 21.0s] UNDERWATER CONCRETE (POZZOLANA) ================= -->
+      <!-- Timed: [16.3-18.6s] then there is concrete, [18.6-20.2s] concrete is fascinating, [20.2-21.0s] unbelievable -->
+      <g class="scene" id="scene-3">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#skySea)"/>
+        <!-- Mediterranean Sea Surface Line & Underwater Cross-Section -->
+        <rect x="-80" y="380" width="1440" height="370" fill="url(#medSeaGrad)"/>
+        <line x1="-80" y1="380" x2="1380" y2="380" stroke="#38bdf8" stroke-width="5"/>
+
+        <!-- Massive Wooden Caisson Being Filled Underwater (Roman Hydraulic Concrete) -->
+        <g transform="translate(640, 480)">
+          <!-- Wooden Caisson Framework Formwork -->
+          <rect x="-160" y="-80" width="320" height="200" fill="none" stroke="#78350f" stroke-width="8"/>
+          <line x1="-160" y1="-20" x2="160" y2="-20" stroke="#78350f" stroke-width="4"/>
+          <line x1="-160" y1="40" x2="160" y2="40" stroke="#78350f" stroke-width="4"/>
+          <!-- Hardening Pozzolana Volcanic Hydraulic Concrete -->
+          <rect id="hydraulic-block" x="-152" y="-72" width="304" height="184" fill="url(#pozzolanaGrad)"/>
+          <!-- Bubbles rising indicating chemical curing underwater -->
+          <circle cx="-60" cy="-30" r="8" fill="#e0f2fe" opacity="0.8"/>
+          <circle cx="40" cy="-50" r="10" fill="#e0f2fe" opacity="0.8"/>
+          <circle cx="-10" cy="10" r="6" fill="#e0f2fe" opacity="0.8"/>
+          <circle cx="80" cy="0" r="7" fill="#e0f2fe" opacity="0.8"/>
+        </g>
+
+        <!-- Roman Hydraulic Engineer / Diver with Volcanic Ash Powder -->
+        <g class="char-bob" transform="translate(320, 290) scale(1.25)">
+          <rect x="24" y="58" width="13" height="48" rx="4" fill="#fed7aa"/>
+          <rect x="44" y="58" width="13" height="48" rx="4" fill="#fed7aa"/>
+          <rect x="20" y="24" width="40" height="42" rx="6" fill="#0284c7"/>
+          <circle cx="40" cy="12" r="14" fill="#fed7aa"/>
+          <!-- Pouring Pozzolana Bucket -->
+          <g class="builder-arm">
+            <rect x="48" y="22" width="12" height="30" rx="4" fill="#0284c7"/>
+            <polygon points="46,44 68,44 64,68 50,68" fill="#78350f"/>
+            <path d="M50,68 L50,110 L56,110 L56,68 Z" fill="#64748b"/> <!-- Volcanic ash pouring -->
+          </g>
+        </g>
+
+        <!-- Scientific Callout Badge -->
+        <g transform="translate(640, 105)">
+          <rect x="-310" y="-45" width="620" height="90" rx="16" fill="#000" opacity="0.85" stroke="#38bdf8" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#38bdf8" font-size="38">HYDRAULIC CONCRETE</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#fef08a" font-size="20">VOLCANIC POZZOLANA HARDENS UNDER SEAWATER</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 4: [21.0s - 30.0s] CAESAREA: ALTERING THE GEOGRAPHY ================= -->
+      <!-- Timed: [21.0-24.4s] new city Caesarea, [24.4-26.4s] no natural harbor, [26.4-28.4s] altered geography, [28.4-30.0s] forced it to work / Right -->
+      <g class="scene" id="scene-4">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#skySea)"/>
+        <!-- Mediterranean Sea -->
+        <rect x="-80" y="440" width="1440" height="320" fill="url(#medSeaGrad)"/>
+
+        <!-- The Man-Made Artificial Breakwaters of Caesarea Maritima (Altering Geography) -->
+        <g id="breakwater-group" transform="translate(580, 480)">
+          <!-- Giant Curved Artificial Mole / Breakwater -->
+          <path d="M-400,140 Q-280,0 -80,-10 Q140,-10 320,80 L360,110 L260,150 Q120,40 -60,40 Q-220,50 -320,160 Z" fill="url(#pozzolanaGrad)" stroke="#1e293b" stroke-width="3"/>
+          <!-- Lighthouse at harbor entrance (Sebastos Pharos) -->
+          <g transform="translate(320, 80)">
+            <rect x="-18" y="-110" width="36" height="110" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+            <polygon points="-24,-110 0,-140 24,-110" fill="#dc2626"/>
+            <circle cx="0" cy="-118" r="10" fill="#fef08a"/> <!-- Lighthouse flame -->
+          </g>
+          <!-- Classical Roman City of Caesarea along the coast (Temples, Palaces, Amphitheater) -->
+          <g transform="translate(-320, -30)">
+            <rect x="0" y="0" width="180" height="70" fill="#e2e8f0"/>
+            <polygon points="-10,0 90,-40 190,0" fill="#f59e0b"/>
+            <!-- Pillars -->
+            <rect x="20" y="10" width="12" height="60" fill="#cbd5e1"/>
+            <rect x="60" y="10" width="12" height="60" fill="#cbd5e1"/>
+            <rect x="100" y="10" width="12" height="60" fill="#cbd5e1"/>
+            <rect x="140" y="10" width="12" height="60" fill="#cbd5e1"/>
+          </g>
+        </g>
+
+        <!-- Roman Merchant Galley Sailing into the Artificial Harbor -->
+        <g class="ship-rock" transform="translate(740, 460)">
+          <!-- Wooden Hull -->
+          <path d="M-60,30 Q0,55 90,30 L110,0 L-80,0 Z" fill="#78350f" stroke="#451a03" stroke-width="2"/>
+          <line x1="20" y1="0" x2="20" y2="-90" stroke="#451a03" stroke-width="5"/>
+          <!-- Roman Square Sail -->
+          <rect x="-25" y="-85" width="90" height="65" rx="3" fill="#dc2626"/>
+          <line x1="-25" y1="-52" x2="65" y2="-52" stroke="#facc15" stroke-width="3"/>
+          <line x1="20" y1="-85" x2="20" y2="-20" stroke="#facc15" stroke-width="3"/>
+          <!-- Oars cutting water -->
+          <line x1="-30" y1="20" x2="-45" y2="45" stroke="#ca8a04" stroke-width="3"/>
+          <line x1="-10" y1="20" x2="-25" y2="45" stroke="#ca8a04" stroke-width="3"/>
+          <line x1="10" y1="20" x2="-5" y2="45" stroke="#ca8a04" stroke-width="3"/>
+          <line x1="30" y1="20" x2="15" y2="45" stroke="#ca8a04" stroke-width="3"/>
+        </g>
+
+        <!-- Final Triumph Banner -->
+        <g transform="translate(640, 105)">
+          <rect x="-340" y="-45" width="680" height="90" rx="16" fill="#000" opacity="0.9" stroke="#38bdf8" stroke-width="3"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#38bdf8" font-size="38">CAESAREA MARITIMA</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#facc15" font-size="20">NO NATURAL HARBOR: HE ALTERED THE GEOGRAPHY</text>
+        </g>
+      </g>
+    </g>
+  </svg>
+
+  <!-- Atmospheric Canvas Particles (Desert Sand Motes & Ocean Spray) -->
+  <canvas id="ambientCanvas" width="1280" height="720"></canvas>
+</div>
+
+<script>
+  /* ================= Deterministic Workforce Creation (Rule 6 & 8b) ================= */
+  let seed = 88412;
+  function seededRand() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
+
+  // Populate Scene 1 with 80 Construction Masons working on the mega project
+  const masonContainer = document.getElementById("masons-crowd-container");
+  const svgNS = "http://www.w3.org/2000/svg";
+  const masonCount = 80;
+
+  for (let i = 0; i < masonCount; i++) {
+    const row = Math.floor(i / 20);
+    const col = i % 20;
+    const g = document.createElementNS(svgNS, "g");
+
+    const x = 520 + (col * 35) + (seededRand() * 8);
+    const y = 490 + (row * 30) + (seededRand() * 4);
+    const s = 0.45 + (row * 0.1);
+
+    g.setAttribute("transform", `translate(${x}, ${y}) scale(${s})`);
+
+    // Head
+    const head = document.createElementNS(svgNS, "circle");
+    head.setAttribute("cx", "0");
+    head.setAttribute("cy", "-24");
+    head.setAttribute("r", "7");
+    head.setAttribute("fill", "#fed7aa");
+
+    // Work Tunic
+    const tunic = document.createElementNS(svgNS, "path");
+    const colors = ["#b45309", "#d97706", "#78350f", "#475569", "#ca8a04"];
+    tunic.setAttribute("d", "M-10,0 L10,0 L8,-18 L-8,-18 Z");
+    tunic.setAttribute("fill", colors[Math.floor(seededRand() * colors.length)]);
+
+    // Stone chisel / mallet prop
+    const tool = document.createElementNS(svgNS, "line");
+    tool.setAttribute("x1", "8");
+    tool.setAttribute("y1", "-10");
+    tool.setAttribute("x2", "18");
+    tool.setAttribute("y2", "2");
+    tool.setAttribute("stroke", "#94a3b8");
+    tool.setAttribute("stroke-width", "3");
+
+    // Stone Block
+    const block = document.createElementNS(svgNS, "rect");
+    block.setAttribute("x", "12");
+    block.setAttribute("y", "-4");
+    block.setAttribute("width", "16");
+    block.setAttribute("height", "14");
+    block.setAttribute("rx", "2");
+    block.setAttribute("fill", "#cbd5e1");
+
+    g.appendChild(tool);
+    g.appendChild(block);
+    g.appendChild(tunic);
+    g.appendChild(head);
+    masonContainer.appendChild(g);
+  }
+
+  /* ================= Atmospheric Canvas Particles ================= */
+  const canvas = document.getElementById("ambientCanvas");
+  const ctx = canvas.getContext("2d");
+  const PARTICLE_COUNT = 75;
+  const particles = [];
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: seededRand() * 1280,
+      y: seededRand() * 720,
+      vx: 0.05 + seededRand() * 0.12,
+      vy: -0.04 - seededRand() * 0.08,
+      r: 1.2 + seededRand() * 2.2,
+      alpha: 0.25 + seededRand() * 0.5
+    });
+  }
+
+  /* ================= Deterministic Clock Function (Rule 5 & 8) ================= */
+  // Merged short sentences into neighbouring scenes across exactly 30.0s (30,000ms):
+  // Scene 0: [0.0s - 1.5s]   (0 - 1500ms)     And you just disappear
+  // Scene 1: [1.5s - 10.7s]  (1500 - 10700ms) Buying love through mind-boggling construction
+  // Scene 2: [10.7s - 16.3s] (10700 - 16300ms) Doubled size of Temple Mount in Jerusalem
+  // Scene 3: [16.3s - 21.0s] (16300 - 21000ms) Fascinating hydraulic concrete underwater
+  // Scene 4: [21.0s - 30.0s] (21000 - 30000ms) Caesarea: Altered the geography / forced it to work
+  const scenes = [
+    { id: "scene-0", start: 0,     end: 1500 },
+    { id: "scene-1", start: 1500,  end: 10700 },
+    { id: "scene-2", start: 10700, end: 16300 },
+    { id: "scene-3", start: 16300, end: 21000 },
+    { id: "scene-4", start: 21000, end: 30000 }
+  ];
+
+  const cameraRoot = document.getElementById("camera-root");
+  const dissolveChar = document.getElementById("dissolve-char");
+  const templePlatform = document.getElementById("platform-rect");
+  const hydraulicBlock = document.getElementById("hydraulic-block");
+
+  window.updateSceneTime = function(t_ms) {
+    const t = Math.max(0, Math.min(30000, t_ms));
+    const FADE = 400; // 0.4s cross-fade
+
+    // 1. Scene Visibility & Cross-fade (Deterministic)
+    scenes.forEach(sc => {
+      const el = document.getElementById(sc.id);
+      if (!el) return;
+
+      if (t < sc.start || t > sc.end) {
+        el.style.display = "none";
+        el.style.opacity = 0;
+      } else {
+        el.style.display = "inline";
+        let opacity = 1;
+        if (t - sc.start < FADE && sc.start !== 0) {
+          opacity = (t - sc.start) / FADE;
+        } else if (sc.end - t < FADE && sc.end !== 30000) {
+          opacity = (sc.end - t) / FADE;
+        }
+        el.style.opacity = opacity;
+      }
+    });
+
+    // 2. Slow Cinematic Camera Pan / Zoom across 30 seconds
+    const progress = t / 30000;
+    const camX = -progress * 46;
+    const camY = Math.sin(progress * Math.PI) * -12;
+    const camScale = 1.0 + (progress * 0.045);
+    cameraRoot.setAttribute("transform", `translate(${camX}, ${camY}) scale(${camScale})`);
+
+    // 3. Scene-Specific Deterministic Actions
+    // Scene 0: Dissolve character into air
+    if (dissolveChar && t <= 1500) {
+      const dissT = t / 1500;
+      dissolveChar.style.opacity = Math.max(0, 1 - dissT * 1.2);
+      dissolveChar.setAttribute("transform", `translate(640, ${390 - dissT * 30}) scale(${1.3 + dissT * 0.3})`);
+    }
+
+    // Scene 2: Platform expansion growth (doubled size visual)
+    if (templePlatform && t >= 10700 && t <= 16300) {
+      const expandT = Math.min(1, (t - 10700) / 3500);
+      const width = 450 + expandT * 450; // Doubling from 450px to 900px
+      templePlatform.setAttribute("width", width);
+      templePlatform.setAttribute("x", -width / 2);
+    }
+
+    // Scene 3: Hydraulic concrete rising/curing in caisson
+    if (hydraulicBlock && t >= 16300 && t <= 21000) {
+      const cureT = Math.min(1, (t - 16300) / 3000);
+      hydraulicBlock.setAttribute("height", 60 + cureT * 124);
+      hydraulicBlock.setAttribute("y", 112 - (60 + cureT * 124));
+    }
+
+    // 4. Atmospheric Canvas Particles
+    ctx.clearRect(0, 0, 1280, 720);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const p = particles[i];
+      const px = (p.x + t * p.vx) % 1280;
+      const py = (p.y + t * p.vy + 720000) % 720;
+      const shimmer = Math.sin(t * 0.004 + i) * 1.5;
+
+      // Color changes according to scene (Desert dust vs Ocean sea spray)
+      ctx.fillStyle = (t >= 16300) ? "#e0f2fe" : "#fef08a";
+      ctx.globalAlpha = p.alpha * (0.6 + 0.4 * Math.sin(t * 0.003 + i));
+      ctx.beginPath();
+      ctx.arc(px + shimmer, py, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+
+  // Initial render at t = 0
+  window.updateSceneTime(0);
+</script>
+</body>
+</html>

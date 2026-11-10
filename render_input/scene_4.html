@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rome vs Judea: Administrative Headache</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #090a0f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #viewport {
+    position: relative;
+    width: 1280px;
+    height: 720px;
+    background: #000;
+    overflow: hidden;
+    box-shadow: 0 0 50px rgba(0,0,0,0.9);
+  }
+  svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+  }
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+    pointer-events: none;
+  }
+
+  /* Articulated Limb Rigging - absolute pixel joint origins */
+  .caesar-arm-l { transform-origin: 26px 36px; animation: caesarHeadache 1.4s infinite alternate ease-in-out; }
+  .caesar-arm-r { transform-origin: 58px 36px; animation: caesarScepter 1.8s infinite alternate ease-in-out; }
+  .leg-l-walk   { transform-origin: 30px 62px; animation: legWalkL 0.7s infinite alternate ease-in-out; }
+  .leg-r-walk   { transform-origin: 50px 62px; animation: legWalkR 0.7s infinite alternate ease-in-out; }
+  .char-bob     { animation: charBob 0.35s infinite alternate ease-in-out; }
+
+  @keyframes legWalkL { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+  @keyframes legWalkR { from { transform: rotate(22deg); } to { transform: rotate(-22deg); } }
+  @keyframes charBob  { from { transform: translateY(0px); } to { transform: translateY(-4px); } }
+  @keyframes caesarHeadache { from { transform: rotate(-65deg); } to { transform: rotate(-85deg); } }
+  @keyframes caesarScepter  { from { transform: rotate(15deg); } to { transform: rotate(-10deg); } }
+
+  .monotheist-arm-l { transform-origin: 24px 34px; animation: refuseL 1.2s infinite alternate ease-in-out; }
+  .monotheist-arm-r { transform-origin: 54px 34px; animation: refuseR 1.2s infinite alternate ease-in-out; }
+  @keyframes refuseL { from { transform: rotate(-35deg); } to { transform: rotate(-10deg); } }
+  @keyframes refuseR { from { transform: rotate(10deg); } to { transform: rotate(35deg); } }
+
+  .outsource-arm-l { transform-origin: 26px 36px; animation: giveScroll 1.6s infinite alternate ease-in-out; }
+  .outsource-arm-r { transform-origin: 56px 36px; animation: takeScroll 1.6s infinite alternate ease-in-out; }
+  @keyframes giveScroll { from { transform: rotate(10deg); } to { transform: rotate(-35deg); } }
+  @keyframes takeScroll { from { transform: rotate(-20deg); } to { transform: rotate(25deg); } }
+
+  .headache-pulse { transform-origin: 500px 380px; animation: pulseHead 0.6s infinite alternate ease-in-out; }
+  @keyframes pulseHead { from { transform: scale(0.92); opacity: 0.6; } to { transform: scale(1.12); opacity: 1; } }
+
+  .text-label {
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    text-shadow: 3px 3px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 0 4px 12px rgba(0,0,0,0.85);
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <svg id="stage" viewBox="0 0 1280 720">
+    <defs>
+      <!-- Gradients -->
+      <linearGradient id="romeSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#b91c1c"/>
+        <stop offset="50%" stop-color="#c2410c"/>
+        <stop offset="100%" stop-color="#fef08a"/>
+      </linearGradient>
+      <linearGradient id="palaceFloor" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#334155"/>
+        <stop offset="100%" stop-color="#0f172a"/>
+      </linearGradient>
+      <linearGradient id="pantheonSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1e1b4b"/>
+        <stop offset="60%" stop-color="#312e81"/>
+        <stop offset="100%" stop-color="#4338ca"/>
+      </linearGradient>
+      <linearGradient id="desertSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ea580c"/>
+        <stop offset="55%" stop-color="#f59e0b"/>
+        <stop offset="100%" stop-color="#fef08a"/>
+      </linearGradient>
+      <linearGradient id="goldGlow" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fde047"/>
+        <stop offset="100%" stop-color="#b45309"/>
+      </linearGradient>
+    </defs>
+
+    <g id="camera-root">
+      <!-- ================= SCENE 0: [0.0s - 4.0s] EFFICIENT SUPERPOWER (ROME'S MARCH) ================= -->
+      <g class="scene" id="scene-0">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#romeSky)"/>
+        <!-- Colosseum & Roman Forum Skyline -->
+        <g transform="translate(180, 220)">
+          <path d="M0,180 Q160,80 320,180 L320,380 L0,380 Z" fill="#92400e" opacity="0.6"/>
+          <line x1="40" y1="180" x2="40" y2="380" stroke="#78350f" stroke-width="8"/>
+          <line x1="120" y1="150" x2="120" y2="380" stroke="#78350f" stroke-width="8"/>
+          <line x1="200" y1="150" x2="200" y2="380" stroke="#78350f" stroke-width="8"/>
+          <line x1="280" y1="180" x2="280" y2="380" stroke="#78350f" stroke-width="8"/>
+        </g>
+        <!-- Via Appia Stone Road -->
+        <path d="M-80,560 L1380,540 L1380,750 L-80,750 Z" fill="#475569"/>
+        <path d="M-80,620 L1380,600 L1380,750 L-80,750 Z" fill="#334155"/>
+
+        <!-- Massive Army Legion Grid (Procedurally populated via JS with 150 figures) -->
+        <g id="superpower-army-container"></g>
+
+        <!-- Centurion Commander Rigged Vector Character -->
+        <g class="char-bob" transform="translate(260, 430) scale(1.3)">
+          <g class="leg-l-walk">
+            <rect x="26" y="58" width="13" height="48" rx="4" fill="#fed7aa"/>
+            <rect x="22" y="98" width="22" height="10" rx="3" fill="#78350f"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="44" y="58" width="13" height="48" rx="4" fill="#fed7aa"/>
+            <rect x="40" y="98" width="22" height="10" rx="3" fill="#78350f"/>
+          </g>
+          <!-- Lorica Segmentata Armor -->
+          <rect x="22" y="24" width="38" height="40" rx="6" fill="#dc2626"/>
+          <path d="M22,28 L60,28 L58,54 L24,54 Z" fill="#cbd5e1"/>
+          <!-- Head & Galea Helmet with Red Crest -->
+          <circle cx="41" cy="12" r="14" fill="#fed7aa"/>
+          <circle cx="46" cy="11" r="2.5" fill="#0f172a"/>
+          <path d="M26,8 Q41,-8 56,8 L58,16 L24,16 Z" fill="#ca8a04"/>
+          <path d="M20,-6 Q41,-20 62,-6 L56,0 L26,0 Z" fill="#b91c1c"/>
+          <!-- Arm holding Gladius -->
+          <g class="caesar-arm-r">
+            <rect x="48" y="24" width="12" height="30" rx="4" fill="#fed7aa"/>
+            <line x1="54" y1="45" x2="85" y2="25" stroke="#cbd5e1" stroke-width="4"/>
+            <polygon points="85,25 94,18 88,29" fill="#e2e8f0"/>
+          </g>
+          <!-- Scutum Shield -->
+          <g class="caesar-arm-l">
+            <rect x="18" y="24" width="12" height="30" rx="4" fill="#fed7aa"/>
+            <rect x="4" y="16" width="24" height="54" rx="4" fill="#b91c1c" stroke="#facc15" stroke-width="2"/>
+            <circle cx="16" cy="43" r="5" fill="#facc15"/>
+          </g>
+        </g>
+
+        <!-- Titles -->
+        <g transform="translate(640, 105)">
+          <rect x="-310" y="-45" width="620" height="90" rx="16" fill="#000" opacity="0.85" stroke="#ef4444" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#ef4444" font-size="38">TERRIFYING SUPERPOWER</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#fef08a" font-size="20">THE ROMAN WAR MACHINE</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 1: [4.0s - 8.1s] CONSTANT BLINDING HEADACHE ================= -->
+      <g class="scene" id="scene-1">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#palaceFloor)"/>
+        <!-- Marble Imperial Hall Columns -->
+        <g transform="translate(140, 160)">
+          <rect x="0" y="0" width="46" height="480" fill="#f1f5f9"/>
+          <rect x="-10" y="0" width="66" height="24" fill="#e2e8f0"/>
+          <rect x="-10" y="456" width="66" height="24" fill="#e2e8f0"/>
+        </g>
+        <g transform="translate(1090, 160)">
+          <rect x="0" y="0" width="46" height="480" fill="#f1f5f9"/>
+          <rect x="-10" y="0" width="66" height="24" fill="#e2e8f0"/>
+          <rect x="-10" y="456" width="66" height="24" fill="#e2e8f0"/>
+        </g>
+
+        <!-- Imperial Throne -->
+        <path d="M420,340 L580,340 L590,560 L410,560 Z" fill="#991b1b" stroke="#eab308" stroke-width="4"/>
+
+        <!-- Roman Emperor / Governor clutching his head with a Blinding Migraine -->
+        <g class="char-bob" transform="translate(460, 360) scale(1.35)">
+          <!-- Legs in Royal Toga -->
+          <rect x="26" y="58" width="13" height="46" rx="4" fill="#fed7aa"/>
+          <rect x="44" y="58" width="13" height="46" rx="4" fill="#fed7aa"/>
+          <rect x="22" y="96" width="22" height="10" rx="3" fill="#ca8a04"/>
+          <rect x="40" y="96" width="22" height="10" rx="3" fill="#ca8a04"/>
+          <!-- Purple Imperial Toga -->
+          <path d="M16,22 L64,22 L58,68 L22,68 Z" fill="#581c87"/>
+          <path d="M22,22 Q40,55 58,22" fill="#eab308" stroke="#ca8a04" stroke-width="2"/>
+          <!-- Head -->
+          <circle cx="41" cy="12" r="14" fill="#fed7aa"/>
+          <circle cx="44" cy="12" r="2.5" fill="#0f172a"/>
+          <!-- Pained Squint Expression Eyebrows -->
+          <path d="M34,8 L48,13" stroke="#000" stroke-width="2"/>
+          <!-- Golden Laurel Wreath -->
+          <path d="M26,10 Q41,-2 56,10" fill="none" stroke="#eab308" stroke-width="4"/>
+          <!-- Left Arm holding forehead (Headache) -->
+          <g class="caesar-arm-l">
+            <rect x="20" y="24" width="12" height="32" rx="4" fill="#fed7aa"/>
+            <circle cx="36" cy="12" r="6" fill="#fed7aa"/>
+          </g>
+          <!-- Right Arm dropping scroll in frustration -->
+          <g class="caesar-arm-r">
+            <rect x="50" y="24" width="12" height="32" rx="4" fill="#fed7aa"/>
+            <rect x="52" y="50" width="16" height="22" rx="3" fill="#fef08a" stroke="#ca8a04"/>
+          </g>
+        </g>
+
+        <!-- Blinding Migraine Flash Vectors -->
+        <g class="headache-pulse">
+          <polygon points="500,310 520,335 508,335 528,360 495,340 508,340" fill="#fde047" stroke="#dc2626" stroke-width="2"/>
+          <polygon points="460,300 480,325 468,325 488,350 455,330 468,330" fill="#ef4444"/>
+          <circle cx="500" cy="340" r="45" fill="none" stroke="#ef4444" stroke-width="3" stroke-dasharray="6,6"/>
+        </g>
+
+        <!-- Map of Judea on Stand Causing the Stress -->
+        <g transform="translate(820, 360)">
+          <rect x="-80" y="-80" width="160" height="220" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="4"/>
+          <path d="M-20,-40 Q10,0 -10,40 Q-40,80 0,60" fill="none" stroke="#dc2626" stroke-width="6"/>
+          <text class="text-label" x="0" y="-50" text-anchor="middle" fill="#dc2626" font-size="20">JUDEA</text>
+          <text class="text-label" x="0" y="80" text-anchor="middle" fill="#000" font-size="14">UNGOVERNABLE?</text>
+        </g>
+
+        <g transform="translate(640, 105)">
+          <rect x="-310" y="-45" width="620" height="90" rx="16" fill="#000" opacity="0.85" stroke="#ef4444" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#ef4444" font-size="38">CONSTANT BLINDING HEADACHE</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#fef08a" font-size="20">ROME STRUGGLES WITH JUDEA</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 2: [8.1s - 13.8s] REFUSE TO WORSHIP ROMAN GODS ================= -->
+      <g class="scene" id="scene-2">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#desertSky)"/>
+        <!-- Roman Pagan Idol Altar (Left) -->
+        <g transform="translate(320, 380)">
+          <!-- Stone Pedestal -->
+          <rect x="-60" y="40" width="120" height="180" fill="#64748b" stroke="#334155" stroke-width="3"/>
+          <text class="text-label" x="0" y="100" text-anchor="middle" fill="#f8fafc" font-size="20">JUPITER</text>
+          <!-- Golden Statue of Roman God with Thunderbolt -->
+          <circle cx="0" cy="-20" r="22" fill="#ca8a04"/>
+          <rect x="-18" y="2" width="36" height="42" rx="4" fill="#eab308"/>
+          <polygon points="18,-10 32,-35 24,-8 38,-30 20,12" fill="#facc15" stroke="#ca8a04"/> <!-- Bolt -->
+          <!-- Big Red Prohibition X over pagan altar -->
+          <line x1="-80" y1="-50" x2="80" y2="150" stroke="#dc2626" stroke-width="8" stroke-linecap="round"/>
+          <line x1="80" y1="-50" x2="-80" y2="150" stroke="#dc2626" stroke-width="8" stroke-linecap="round"/>
+        </g>
+
+        <!-- Right Side: Rigged Jewish Monotheist Character Turning Away Defiantly -->
+        <g class="char-bob" transform="translate(820, 390) scale(1.35)">
+          <g class="leg-l-walk">
+            <rect x="26" y="58" width="13" height="48" rx="4" fill="#b45309"/>
+            <rect x="22" y="98" width="22" height="10" rx="3" fill="#78350f"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="44" y="58" width="13" height="48" rx="4" fill="#b45309"/>
+            <rect x="40" y="98" width="22" height="10" rx="3" fill="#78350f"/>
+          </g>
+          <!-- Linen Tunic & Tallit Fringe Sash -->
+          <rect x="22" y="24" width="38" height="42" rx="6" fill="#1e3a8a"/>
+          <path d="M22,24 L48,24 L36,66 L18,66 Z" fill="#f8fafc" opacity="0.95"/>
+          <!-- Head Turned Right (Away from Pagan Idol) -->
+          <circle cx="41" cy="12" r="14" fill="#fed7aa"/>
+          <path d="M26,10 Q41,-4 56,8 L56,14 Z" fill="#451a03"/>
+          <rect x="25" y="8" width="32" height="6" rx="2" fill="#d97706"/>
+          <circle cx="48" cy="12" r="2.5" fill="#0f172a"/>
+          <!-- Arms Pushing Away / Refusing -->
+          <g class="monotheist-arm-l">
+            <rect x="18" y="24" width="12" height="30" rx="4" fill="#1e3a8a"/>
+            <!-- Palm raised in 'NO' gesture -->
+            <polygon points="12,50 8,36 18,36 24,50" fill="#fed7aa"/>
+          </g>
+          <g class="monotheist-arm-r">
+            <rect x="48" y="24" width="12" height="30" rx="4" fill="#1e3a8a"/>
+            <!-- Holding sacred parchment / Torat scroll -->
+            <rect x="52" y="44" width="22" height="12" rx="3" fill="#fef08a" stroke="#ca8a04"/>
+          </g>
+        </g>
+
+        <!-- Titles -->
+        <g transform="translate(640, 105)">
+          <rect x="-310" y="-45" width="620" height="90" rx="16" fill="#000" opacity="0.85" stroke="#ef4444" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#ef4444" font-size="36">REFUSING ROMAN GODS</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#ffffff" font-size="20">UNCOMPROMISING MONOTHEISM</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 3: [13.8s - 20.8s] THE PANTHEON POLICY ================= -->
+      <g class="scene" id="scene-3">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#pantheonSky)"/>
+        <!-- Giant Roman Pantheon Temple Pediment -->
+        <g transform="translate(640, 180)">
+          <polygon points="-420,120 0,0 420,120" fill="#e2e8f0" stroke="#94a3b8" stroke-width="4"/>
+          <text class="text-label" x="0" y="90" text-anchor="middle" fill="#1e1b4b" font-size="32">THE ROMAN PANTHEON</text>
+        </g>
+
+        <!-- Multi-God Niches in the Temple (Polytheistic standard operating procedure) -->
+        <g transform="translate(240, 380)">
+          <rect x="-50" y="-40" width="100" height="180" rx="40" fill="#312e81" stroke="#fbbf24" stroke-width="3"/>
+          <circle cx="0" cy="20" r="18" fill="#93c5fd"/>
+          <rect x="-14" y="38" width="28" height="40" rx="4" fill="#60a5fa"/>
+          <text class="text-label" x="0" y="110" text-anchor="middle" fill="#fbbf24" font-size="16">GREEK GODS</text>
+        </g>
+        <g transform="translate(440, 380)">
+          <rect x="-50" y="-40" width="100" height="180" rx="40" fill="#312e81" stroke="#fbbf24" stroke-width="3"/>
+          <circle cx="0" cy="20" r="18" fill="#f472b6"/>
+          <rect x="-14" y="38" width="28" height="40" rx="4" fill="#ec4899"/>
+          <text class="text-label" x="0" y="110" text-anchor="middle" fill="#fbbf24" font-size="16">EGYPTIAN (ISIS)</text>
+        </g>
+        <g transform="translate(640, 380)">
+          <rect x="-50" y="-40" width="100" height="180" rx="40" fill="#312e81" stroke="#fbbf24" stroke-width="3"/>
+          <circle cx="0" cy="20" r="18" fill="#fb923c"/>
+          <rect x="-14" y="38" width="28" height="40" rx="4" fill="#f97316"/>
+          <text class="text-label" x="0" y="110" text-anchor="middle" fill="#fbbf24" font-size="16">PERSIAN (MITHRAS)</text>
+        </g>
+
+        <!-- The Empty / Rejected Niche on Right (Judea cannot fit into polytheism) -->
+        <g id="empty-niche-group" transform="translate(860, 380)">
+          <rect x="-50" y="-40" width="100" height="180" rx="40" fill="#450a0a" stroke="#ef4444" stroke-width="4" stroke-dasharray="10,6"/>
+          <text class="text-label" x="0" y="40" text-anchor="middle" fill="#f87171" font-size="44">?</text>
+          <text class="text-label" x="0" y="110" text-anchor="middle" fill="#fca5a5" font-size="16">CANNOT INTEGRATE</text>
+        </g>
+
+        <!-- Titles -->
+        <g transform="translate(640, 80)">
+          <rect x="-330" y="-35" width="660" height="70" rx="14" fill="#000" opacity="0.85" stroke="#facc15" stroke-width="2"/>
+          <text class="text-label" x="0" y="12" text-anchor="middle" fill="#fde047" font-size="30">STANDARD OPERATING PROCEDURE: ABSORB ALL GODS</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 4: [20.8s - 27.8s] ADMINISTRATIVE CRISIS & PERPLEXED SCRIBES ================= -->
+      <g class="scene" id="scene-4">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#palaceFloor)"/>
+        <!-- Endless Stacks of Roman Bureaucratic Tax and Law Scrolls -->
+        <g transform="translate(200, 360)">
+          <rect x="0" y="100" width="80" height="140" fill="#78350f"/>
+          <rect x="-15" y="80" width="110" height="24" rx="6" fill="#fef08a"/>
+          <rect x="-10" y="50" width="100" height="24" rx="6" fill="#fed7aa"/>
+          <rect x="-20" y="20" width="120" height="24" rx="6" fill="#fef3c7"/>
+          <text class="text-label" x="40" y="160" text-anchor="middle" fill="#facc15" font-size="14">TAX LAWS</text>
+        </g>
+        <g transform="translate(980, 360)">
+          <rect x="0" y="100" width="80" height="140" fill="#78350f"/>
+          <rect x="-10" y="80" width="100" height="24" rx="6" fill="#fef08a"/>
+          <rect x="-20" y="50" width="120" height="24" rx="6" fill="#fed7aa"/>
+          <rect x="-15" y="20" width="110" height="24" rx="6" fill="#fef3c7"/>
+          <text class="text-label" x="40" y="160" text-anchor="middle" fill="#ef4444" font-size="14">REVOLT REPORTS</text>
+        </g>
+
+        <!-- Perplexed Roman Bureaucrat / Scribe in Center Scratching Head -->
+        <g class="char-bob" transform="translate(560, 400) scale(1.35)">
+          <!-- Legs -->
+          <g class="leg-l-walk">
+            <rect x="26" y="58" width="13" height="48" rx="4" fill="#fed7aa"/>
+            <rect x="22" y="98" width="22" height="10" rx="3" fill="#64748b"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="44" y="58" width="13" height="48" rx="4" fill="#fed7aa"/>
+            <rect x="40" y="98" width="22" height="10" rx="3" fill="#64748b"/>
+          </g>
+          <!-- Toga -->
+          <rect x="22" y="24" width="38" height="42" rx="6" fill="#f1f5f9"/>
+          <path d="M22,24 L42,66 L60,24 Z" fill="#94a3b8"/>
+          <!-- Head Shrugging -->
+          <circle cx="41" cy="12" r="14" fill="#fed7aa"/>
+          <circle cx="45" cy="12" r="2.5" fill="#0f172a"/>
+          <path d="M28,10 Q41,-4 54,6 L54,12 Z" fill="#475569"/>
+          <!-- Shrugging Arms -->
+          <g class="monotheist-arm-l">
+            <rect x="16" y="24" width="12" height="30" rx="4" fill="#f1f5f9"/>
+            <circle cx="16" cy="54" r="5" fill="#fed7aa"/>
+          </g>
+          <g class="monotheist-arm-r">
+            <rect x="50" y="24" width="12" height="30" rx="4" fill="#f1f5f9"/>
+            <circle cx="62" cy="54" r="5" fill="#fed7aa"/>
+          </g>
+        </g>
+
+        <!-- Big Question Marks popping up -->
+        <text class="text-label" x="520" y="320" fill="#ef4444" font-size="52">?</text>
+        <text class="text-label" x="680" y="310" fill="#facc15" font-size="62">?</text>
+
+        <!-- Titles -->
+        <g transform="translate(640, 105)">
+          <rect x="-340" y="-45" width="680" height="90" rx="16" fill="#000" opacity="0.85" stroke="#ef4444" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#ef4444" font-size="36">ADMINISTRATIVE BREAKDOWN</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#ffffff" font-size="20">"THEY JUST DIDN'T KNOW HOW TO HANDLE IT"</text>
+        </g>
+      </g>
+
+      <!-- ================= SCENE 5: [27.8s - 30.0s] OUTSOURCE THE PROBLEM (HEROD CLIENT KING) ================= -->
+      <g class="scene" id="scene-5">
+        <rect x="-100" y="-100" width="1480" height="920" fill="url(#romeSky)"/>
+        <!-- Roman Seal on Left, Judean Client Throne on Right -->
+        <g transform="translate(180, 280)">
+          <circle cx="0" cy="0" r="90" fill="#991b1b" stroke="#facc15" stroke-width="4"/>
+          <text class="text-label" x="0" y="10" text-anchor="middle" fill="#facc15" font-size="34">ROME</text>
+        </g>
+        <g transform="translate(1080, 280)">
+          <circle cx="0" cy="0" r="90" fill="#1e3a8a" stroke="#ca8a04" stroke-width="4"/>
+          <text class="text-label" x="0" y="10" text-anchor="middle" fill="#fde047" font-size="28">CLIENT</text>
+          <text class="text-label" x="0" y="38" text-anchor="middle" fill="#fde047" font-size="22">KING</text>
+        </g>
+
+        <!-- Roman Diplomat (Left) Passing Authority Scroll to Client King (Right) -->
+        <g class="char-bob" transform="translate(440, 410) scale(1.3)">
+          <g class="leg-l-walk">
+            <rect x="26" y="58" width="13" height="46" rx="4" fill="#fed7aa"/>
+            <rect x="22" y="98" width="22" height="10" rx="3" fill="#64748b"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="44" y="58" width="13" height="46" rx="4" fill="#fed7aa"/>
+            <rect x="40" y="98" width="22" height="10" rx="3" fill="#64748b"/>
+          </g>
+          <rect x="22" y="24" width="38" height="40" rx="6" fill="#991b1b"/>
+          <circle cx="41" cy="12" r="14" fill="#fed7aa"/>
+          <g class="outsource-arm-l">
+            <rect x="18" y="24" width="12" height="30" rx="4" fill="#991b1b"/>
+            <!-- Handing over Royal Mandate Scroll -->
+            <rect x="36" y="26" width="45" height="14" rx="4" fill="#fef08a" stroke="#ca8a04"/>
+          </g>
+        </g>
+
+        <!-- Herod / Client Ruler (Right) Receiving the Governance of Judea -->
+        <g class="char-bob" transform="translate(740, 410) scale(1.3)">
+          <g class="leg-l-walk">
+            <rect x="26" y="58" width="13" height="46" rx="4" fill="#fed7aa"/>
+            <rect x="22" y="98" width="22" height="10" rx="3" fill="#ca8a04"/>
+          </g>
+          <g class="leg-r-walk">
+            <rect x="44" y="58" width="13" height="46" rx="4" fill="#fed7aa"/>
+            <rect x="40" y="98" width="22" height="10" rx="3" fill="#ca8a04"/>
+          </g>
+          <!-- Eastern Client King Silk Robes & Crown -->
+          <rect x="22" y="24" width="38" height="42" rx="6" fill="#047857"/>
+          <circle cx="41" cy="12" r="14" fill="#fed7aa"/>
+          <!-- Golden Eastern Crown -->
+          <polygon points="26,6 34,-6 41,2 48,-6 56,6" fill="#facc15"/>
+          <g class="outsource-arm-r">
+            <rect x="48" y="24" width="12" height="30" rx="4" fill="#047857"/>
+            <circle cx="56" cy="54" r="5" fill="#fed7aa"/>
+          </g>
+        </g>
+
+        <!-- Big Mandate Banner -->
+        <g transform="translate(640, 105)">
+          <rect x="-310" y="-45" width="620" height="90" rx="16" fill="#000" opacity="0.85" stroke="#facc15" stroke-width="2"/>
+          <text class="text-label" x="0" y="2" text-anchor="middle" fill="#facc15" font-size="38">OUTSOURCE THE PROBLEM</text>
+          <text class="text-label" x="0" y="34" text-anchor="middle" fill="#ffffff" font-size="20">INSTALLING CLIENT RULERS (HERODIAN DYNASTY)</text>
+        </g>
+      </g>
+    </g>
+  </svg>
+
+  <!-- Atmospheric Canvas Particles (Desert Dust motes & Palace Sparks) -->
+  <canvas id="ambientCanvas" width="1280" height="720"></canvas>
+</div>
+
+<script>
+  /* ================= Deterministic Crowd Creation (Rule 6 & 8b) ================= */
+  let seed = 38472;
+  function seededRand() {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
+
+  // Populate Scene 0 with 150 Roman Legion Soldiers (Terrifying Superpower host)
+  const armyContainer = document.getElementById("superpower-army-container");
+  const svgNS = "http://www.w3.org/2000/svg";
+  const soldierCount = 150;
+
+  for (let i = 0; i < soldierCount; i++) {
+    const row = Math.floor(i / 30);
+    const col = i % 30;
+    const g = document.createElementNS(svgNS, "g");
+
+    const x = 440 + (col * 26) - (row * 16) + (seededRand() * 4);
+    const y = 430 + (row * 24) + (seededRand() * 4);
+    const s = 0.44 + (row * 0.08);
+
+    g.setAttribute("transform", `translate(${x}, ${y}) scale(${s})`);
+
+    const shield = document.createElementNS(svgNS, "rect");
+    shield.setAttribute("x", "-7");
+    shield.setAttribute("y", "-14");
+    shield.setAttribute("width", "14");
+    shield.setAttribute("height", "26");
+    shield.setAttribute("rx", "3");
+    shield.setAttribute("fill", "#b91c1c");
+    shield.setAttribute("stroke", "#facc15");
+    shield.setAttribute("stroke-width", "1.5");
+
+    const head = document.createElementNS(svgNS, "circle");
+    head.setAttribute("cx", "0");
+    head.setAttribute("cy", "-20");
+    head.setAttribute("r", "5.5");
+    head.setAttribute("fill", "#ca8a04");
+
+    const spear = document.createElementNS(svgNS, "line");
+    spear.setAttribute("x1", "5");
+    spear.setAttribute("y1", "-34");
+    spear.setAttribute("x2", "5");
+    spear.setAttribute("y2", "12");
+    spear.setAttribute("stroke", "#475569");
+    spear.setAttribute("stroke-width", "2");
+
+    g.appendChild(spear);
+    g.appendChild(head);
+    g.appendChild(shield);
+    armyContainer.appendChild(g);
+  }
+
+  /* ================= Atmospheric Canvas Particles ================= */
+  const canvas = document.getElementById("ambientCanvas");
+  const ctx = canvas.getContext("2d");
+  const PARTICLE_COUNT = 70;
+  const particles = [];
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: seededRand() * 1280,
+      y: seededRand() * 720,
+      vx: 0.05 + seededRand() * 0.12,
+      vy: -0.03 - seededRand() * 0.08,
+      r: 1.2 + seededRand() * 2.2,
+      alpha: 0.2 + seededRand() * 0.5
+    });
+  }
+
+  /* ================= Deterministic Clock Function (Rule 5 & 8) ================= */
+  // Merged short sentences into neighbouring scenes across exactly 30.0s (30,000ms):
+  // Scene 0: [0.0s - 4.0s]   (0 - 4000ms)     Terrifying efficient superpower
+  // Scene 1: [4.0s - 8.1s]   (4000 - 8100ms)  Constant blinding headache for Rome
+  // Scene 2: [8.1s - 13.8s]  (8100 - 13800ms) Refuse to worship Roman gods
+  // Scene 3: [13.8s - 20.8s] (13800 - 20800ms) Polytheistic pantheon integration policy
+  // Scene 4: [20.8s - 27.8s] (20800 - 27800ms) Massive administrative problem / didn't know how to handle
+  // Scene 5: [27.8s - 30.0s] (27800 - 30000ms) Rome's initial solution: Outsource the problem
+  const scenes = [
+    { id: "scene-0", start: 0,     end: 4000 },
+    { id: "scene-1", start: 4000,  end: 8100 },
+    { id: "scene-2", start: 8100,  end: 13800 },
+    { id: "scene-3", start: 13800, end: 20800 },
+    { id: "scene-4", start: 20800, end: 27800 },
+    { id: "scene-5", start: 27800, end: 30000 }
+  ];
+
+  const cameraRoot = document.getElementById("camera-root");
+
+  window.updateSceneTime = function(t_ms) {
+    const t = Math.max(0, Math.min(30000, t_ms));
+    const FADE = 400; // 0.4s cross-fade
+
+    // 1. Scene Visibility & Cross-fade (Deterministic)
+    scenes.forEach(sc => {
+      const el = document.getElementById(sc.id);
+      if (!el) return;
+
+      if (t < sc.start || t > sc.end) {
+        el.style.display = "none";
+        el.style.opacity = 0;
+      } else {
+        el.style.display = "inline";
+        let opacity = 1;
+        if (t - sc.start < FADE && sc.start !== 0) {
+          opacity = (t - sc.start) / FADE;
+        } else if (sc.end - t < FADE && sc.end !== 30000) {
+          opacity = (sc.end - t) / FADE;
+        }
+        el.style.opacity = opacity;
+      }
+    });
+
+    // 2. Slow Cinematic Camera Pan / Zoom across 30 seconds
+    const progress = t / 30000;
+    const camX = -progress * 46;
+    const camY = Math.sin(progress * Math.PI) * -12;
+    const camScale = 1.0 + (progress * 0.045);
+    cameraRoot.setAttribute("transform", `translate(${camX}, ${camY}) scale(${camScale})`);
+
+    // 3. Deterministic Motion on Elements
+    // Scene 0: Legion marching shift
+    if (t <= 4000) {
+      const marchX = (t / 4000) * -35;
+      armyContainer.setAttribute("transform", `translate(${marchX}, 0)`);
+    }
+
+    // Scene 3: Pantheon Rejected Niche Shudder
+    const emptyNiche = document.getElementById("empty-niche-group");
+    if (emptyNiche && t >= 13800 && t <= 20800) {
+      const shudder = Math.sin((t - 13800) * 0.02) * 3;
+      emptyNiche.setAttribute("transform", `translate(${860 + shudder}, 380)`);
+    }
+
+    // 4. Atmospheric Canvas Particles
+    ctx.clearRect(0, 0, 1280, 720);
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const p = particles[i];
+      const px = (p.x + t * p.vx) % 1280;
+      const py = (p.y + t * p.vy + 720000) % 720;
+      const shimmer = Math.sin(t * 0.004 + i) * 1.5;
+
+      ctx.fillStyle = (t >= 8100 && t <= 13800) ? "#f59e0b" : "#fef08a";
+      ctx.globalAlpha = p.alpha * (0.6 + 0.4 * Math.sin(t * 0.003 + i));
+      ctx.beginPath();
+      ctx.arc(px + shimmer, py, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+
+  // Initial render at t = 0
+  window.updateSceneTime(0);
+</script>
+</body>
+</html>
