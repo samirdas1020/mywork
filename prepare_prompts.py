@@ -21,8 +21,10 @@ STRICT 2D CARTOON VISUAL & RIGGING RULES:
 1. NO STICKMEN! Draw full-bodied, colorful 2D flat-vector cartoon characters using layered `<svg>` groups (`<g>`).
    - Every character MUST have: colored torso/tunic/armor (`<path>` or `<rect rx="...">`), expressive head with skin tone, eyes, eyebrows, headgear (crown, turban, helmet, hat), and separate articulated limbs (`<g class="arm-left">`, `<g class="arm-right">`, `<g class="leg-left">`, `<g class="leg-right">`) holding props (swords, shields, scrolls, muskets, flags).
 2. ARTICULATED LIMB RIGGING (CSS Keyframes):
-   - Use `transform-box: fill-box; transform-origin: top center;` on arms and legs so they swing naturally from the shoulders/hips!
+   - Rotate arms and legs around the shoulder/hip joint using the absolute px `transform-origin` described below (do NOT use `fill-box` or `top center`, they pivot at the wrong point).
    - Animate walking cycles, sword swinging, horse galloping, ship rocking, and flag waving using continuous CSS `@keyframes` (`infinite alternate ease-in-out`).
+   - LIMB ATTACHMENT (CRITICAL): every arm and leg must stay attached to the body while moving. Set `transform-origin` in absolute px (e.g. `transform-origin: 28px 40px`) exactly at the shoulder or hip joint, and make the top end of each limb overlap INTO the torso by a few pixels so no gap is ever visible.
+   - WALK CYCLE: opposite limbs move together (left arm with right leg, right arm with left leg) using the same duration and timing, with a small body up/down bob in the same rhythm. Never animate limbs with unrelated speeds.
 3. LAYERED PARALLAX ENVIRONMENT:
    - Rich multi-layered SVG background: animated sky gradient, drifting clouds, distant mountains/palaces/fortresses, mid-ground trees/rivers/ships, and foreground terrain.
    - Apply a slow cinematic camera pan or zoom on the master `<svg>` stage across {duration} seconds.
@@ -38,9 +40,11 @@ STRICT 2D CARTOON VISUAL & RIGGING RULES:
    - Build each scene as its own `<g class="scene" id="scene-N">`. Inside `window.updateSceneTime(t_ms)` show only the active scene (opacity/display) based on `t_ms`, with a quick 0.4 second cross-fade between scenes.
    - Keep each scene simple (1-2 characters, a few background shapes) so the total code stays compact.
 9. DETERMINISTIC ONLY: do NOT use requestAnimationFrame, setInterval, setTimeout, Date.now or performance.now. Any JS motion must be computed only from the `t_ms` given to `window.updateSceneTime`. Math.random is allowed only once at start to create particle seeds.
-10. Do NOT draw any subtitle, caption or narration text on screen. Visuals only.
-11. Keep the whole code compact (under about 700 lines) so the reply is not cut off.
-12. Output ONLY valid HTML inside a ```html ... ``` code block, with no explanation before or after.
+10. NEVER use CSS `transition` or JS-driven animations for opacity/position (they run in real time and break frame capture). Set opacity, display and transforms only from `window.updateSceneTime(t_ms)`. CSS `@keyframes` is allowed only for limb/loop movement.
+11. CAMERA: when panning or zooming the stage, never expose its edges. Draw backgrounds wider than 1280x720 and keep translate smaller than (scale-1)*640 horizontally.
+12. Do NOT draw any subtitle, caption or narration text on screen. Visuals only.
+13. Keep the whole code compact (under about 700 lines) so the reply is not cut off.
+14. Output ONLY valid HTML inside a ```html ... ``` code block, with no explanation before or after.
 """.strip()
 
 
