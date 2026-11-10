@@ -34,9 +34,12 @@ STRICT 2D CARTOON VISUAL & RIGGING RULES:
    - Also use standard CSS `@keyframes` for limb rigging and movement.
 6. NEVER use `<use>` or `<symbol>`, because animations inside `<use>` cannot be frame-synced. Main characters are written out in full with their own limb groups. Crowds and armies must be created by a JS loop at load time using `document.createElementNS` (each figure a few simple shapes: head circle, body, legs), placed with a seeded pseudo-random function so the layout is always identical, and moved only from `window.updateSceneTime(t_ms)`.
 7. CHARACTERS MUST STAND ON THE GROUND: keep every character upright (never rotate a whole character group). On slopes, stairs or ships, only move characters with translate so their feet touch the surface. Characters must not overlap each other or float in the air.
-8. TIMING & SCENES FOLLOW THE TIMED NARRATION: the animation length is exactly {duration} seconds ({int(duration*1000)} ms). Use this exact value everywhere; do not loop.
-   - Make one scene per timed sentence above (merge a sentence shorter than 3 seconds into its neighbour). A scene must start exactly at that sentence's start time and end at its end time, so the picture always matches what is being said right now.
-   - Build each scene as its own `<g class="scene" id="scene-N">`. Inside `window.updateSceneTime(t_ms)` show only the active scene (opacity/display) based on `t_ms`, with a quick 0.4 second cross-fade between scenes. Every scene needs a different location, camera angle or action; never repeat the same picture.
+8. 8. TIMED NARRATION & ACTION BINDING (CRITICAL):
+   - Total animation length is exactly {duration} seconds ({int(duration*1000)} ms).
+   - The visual MUST directly act out what is spoken during each timed sentence in the cues above.
+   - For every line:
+     * When sentence t_start arrives in window.updateSceneTime(t_ms), trigger the specific action mentioned (e.g., if speech says "he signed the decree", draw/pose the character signing; if "the fleet set sail", animate ships moving).
+     * Advance either the character poses/actions within the scene or switch to a dedicated scene group (<g id="scene-N">) matching that exact time window.
 9. DETERMINISTIC ONLY: do NOT use requestAnimationFrame, setInterval, setTimeout, Date.now or performance.now. Any JS motion must be computed only from the `t_ms` given to `window.updateSceneTime`. Math.random is allowed only once at start to create particle seeds.
 10. NEVER use CSS `transition` or JS-driven animations for opacity/position (they run in real time and break frame capture). Set opacity, display and transforms only from `window.updateSceneTime(t_ms)`. CSS `@keyframes` is allowed only for limb/loop movement.
 11. CAMERA: when panning or zooming the stage, never expose its edges. Draw backgrounds wider than 1280x720 and keep translate smaller than (scale-1)*640 horizontally.
