@@ -7,14 +7,15 @@ TOTAL_CHUNKS = 10
 WIDTH, HEIGHT = 1280, 720
 
 
-def build_cartoon_rigging_prompt(scene_text, duration):
-    n_scenes = max(1, round(duration / 8))
+def build_cartoon_rigging_prompt(scene_text, duration, timeline=""):
     return f"""
 You are a master 2D Vector Cartoon Animator (like Kurzgesagt / Oversimplified / Adobe Animate).
 Build a complete, self-contained HTML5 document (`<!DOCTYPE html>`) that plays a rich, colorful 2D rigged cartoon animation for this historical narration:
 
 Narration: "{scene_text}"
 Target Duration: {duration} seconds
+Timed narration (seconds from the start of this clip; this is exactly when each sentence is spoken):
+{timeline}
 Viewport Size: {WIDTH}x{HEIGHT} pixels
 
 STRICT 2D CARTOON VISUAL & RIGGING RULES:
@@ -33,19 +34,35 @@ STRICT 2D CARTOON VISUAL & RIGGING RULES:
 5. SYNCHRONIZED CLOCK HOOK (CRITICAL FOR RENDERER):
    - Define `window.updateSceneTime = function(t_ms) {{ ... }}` that updates both the `<canvas>` particles AND any JS-driven character movements deterministically based on `t_ms` (milliseconds from 0 to {int(duration*1000)}).
    - Also use standard CSS `@keyframes` for limb rigging and movement.
-6. NEVER use `<use>` or `<symbol>` to duplicate characters. Write every character's SVG out in full (each with its own limb groups), because animations inside `<use>` cannot be frame-synced by the renderer.
+6. NEVER use `<use>` or `<symbol>`, because animations inside `<use>` cannot be frame-synced. Main characters are written out in full with their own limb groups. Crowds and armies must be created by a JS loop at load time using `document.createElementNS` (each figure a few simple shapes: head circle, body, legs), placed with a seeded pseudo-random function so the layout is always identical, and moved only from `window.updateSceneTime(t_ms)`.
 7. CHARACTERS MUST STAND ON THE GROUND: keep every character upright (never rotate a whole character group). To show a slope or ramp, only move characters with translate along it so their feet touch the surface. Characters must not overlap each other or float in the air.
-8. TIMING & MULTIPLE SCENES: the animation length is exactly {duration} seconds ({int(duration*1000)} ms). Use this exact value everywhere; do not loop.
-   - Split it into {n_scenes} DIFFERENT scenes of about 8 seconds each. Each scene must show a different location/background and different characters or action that matches that part of the narration (never repeat the same picture).
-   - Build each scene as its own `<g class="scene" id="scene-N">`. Inside `window.updateSceneTime(t_ms)` show only the active scene (opacity/display) based on `t_ms`, with a quick 0.4 second cross-fade between scenes.
-   - Keep each scene simple (1-2 characters, a few background shapes) so the total code stays compact.
+8. TIMING & SCENES FOLLOW THE TIMED NARRATION: the animation length is exactly {duration} seconds ({int(duration*1000)} ms). Use this exact value everywhere; do not loop.
+   - Make one scene per timed sentence above (merge a sentence shorter than 3 seconds into its neighbour). A scene must start exactly at that sentence's start time and end at its end time, so the picture always matches what is being said right now.
+   - Build each scene as its own `<g class="scene" id="scene-N">`. Inside `window.updateSceneTime(t_ms)` show only the active scene (opacity/display) based on `t_ms`, with a quick 0.4 second cross-fade between scenes. Every scene needs a different location, camera angle or action; never repeat the same picture.
+8b. VISUALS MUST MATCH THE WORDS (MOST IMPORTANT): every number, quantity, person, place, year and action in a sentence must be clearly visible in that sentence's scene.
+   - QUANTITIES: show amounts in proportion with a crowd made by a JS loop. Draw at most about 150 small figures for the largest number in the clip and scale the others by ratio (for example 2000 -> 150 figures, 1500 -> 112, 960 -> 72), so a bigger number always looks visibly bigger. Always add a short label with the real number.
+   - CHANGES: when the narration says a number grows, shrinks, wins or loses, animate it (figures appear, march in, or fade out) at the moment it is spoken.
+   - COMPARISONS: show both sides at once, left versus right, each with its label.
+   - Keep the code compact: draw the background with a few shapes and put the effort into the figures the sentence is about.
 9. DETERMINISTIC ONLY: do NOT use requestAnimationFrame, setInterval, setTimeout, Date.now or performance.now. Any JS motion must be computed only from the `t_ms` given to `window.updateSceneTime`. Math.random is allowed only once at start to create particle seeds.
 10. NEVER use CSS `transition` or JS-driven animations for opacity/position (they run in real time and break frame capture). Set opacity, display and transforms only from `window.updateSceneTime(t_ms)`. CSS `@keyframes` is allowed only for limb/loop movement.
 11. CAMERA: when panning or zooming the stage, never expose its edges. Draw backgrounds wider than 1280x720 and keep translate smaller than (scale-1)*640 horizontally.
-12. Do NOT draw any subtitle, caption or narration text on screen. Visuals only.
+12. Short on-screen labels ARE allowed and encouraged for numbers, years, place names and who is who (for example "2,000 soldiers", "73 CE", "Masada"): at most 4 words each, in clear large text. Do NOT write full sentences, subtitles or captions of the narration.
 13. Keep the whole code compact (under about 700 lines) so the reply is not cut off.
 14. Output ONLY valid HTML inside a ```html ... ``` code block, with no explanation before or after.
 """.strip()
+
+
+def build_timeline(segments, start, end):
+    """Sentence lines with times relative to the chunk start."""
+    lines = []
+    for sg in segments:
+        mid = (sg.start + sg.end) / 2
+        if start <= mid < end:
+            a = max(sg.start - start, 0.0)
+            b = min(sg.end - start, end - start)
+            lines.append(f"[{a:.1f}s - {b:.1f}s] {sg.text.strip()}")
+    return "\n".join(lines)
 
 
 def main():
@@ -76,12 +93,13 @@ def main():
 
         audio[int(start * 1000):int(end * 1000)].export(f"{OUT}/audio_{i}.mp3", format="mp3")
 
-        prompt = build_cartoon_rigging_prompt(text, duration)
+        timeline = build_timeline(segments, start, end) or f"[0.0s - {duration:.1f}s] {text}"
+        prompt = build_cartoon_rigging_prompt(text, duration, timeline)
         with open(f"{OUT}/prompt_{i}.txt", "w", encoding="utf-8") as f:
             f.write(prompt)
         combined.append(f"===== PROMPT {i} =====\n{prompt}\n")
 
-        meta.append({"index": i, "duration": duration, "text": text})
+        meta.append({"index": i, "duration": duration, "text": text, "timeline": timeline})
         print(f"Chunk {i}: {duration}s | {text[:60]}...", flush=True)
 
     with open(f"{OUT}/all_prompts.txt", "w", encoding="utf-8") as f:
