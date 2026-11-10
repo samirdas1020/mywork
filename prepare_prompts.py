@@ -8,6 +8,7 @@ WIDTH, HEIGHT = 1280, 720
 
 
 def build_cartoon_rigging_prompt(scene_text, duration):
+    n_scenes = max(1, round(duration / 8))
     return f"""
 You are a master 2D Vector Cartoon Animator (like Kurzgesagt / Oversimplified / Adobe Animate).
 Build a complete, self-contained HTML5 document (`<!DOCTYPE html>`) that plays a rich, colorful 2D rigged cartoon animation for this historical narration:
@@ -30,7 +31,16 @@ STRICT 2D CARTOON VISUAL & RIGGING RULES:
 5. SYNCHRONIZED CLOCK HOOK (CRITICAL FOR RENDERER):
    - Define `window.updateSceneTime = function(t_ms) {{ ... }}` that updates both the `<canvas>` particles AND any JS-driven character movements deterministically based on `t_ms` (milliseconds from 0 to {int(duration*1000)}).
    - Also use standard CSS `@keyframes` for limb rigging and movement.
-6. Output ONLY valid HTML inside a ```html ... ``` code block.
+6. NEVER use `<use>` or `<symbol>` to duplicate characters. Write every character's SVG out in full (each with its own limb groups), because animations inside `<use>` cannot be frame-synced by the renderer.
+7. CHARACTERS MUST STAND ON THE GROUND: keep every character upright (never rotate a whole character group). To show a slope or ramp, only move characters with translate along it so their feet touch the surface. Characters must not overlap each other or float in the air.
+8. TIMING & MULTIPLE SCENES: the animation length is exactly {duration} seconds ({int(duration*1000)} ms). Use this exact value everywhere; do not loop.
+   - Split it into {n_scenes} DIFFERENT scenes of about 8 seconds each. Each scene must show a different location/background and different characters or action that matches that part of the narration (never repeat the same picture).
+   - Build each scene as its own `<g class="scene" id="scene-N">`. Inside `window.updateSceneTime(t_ms)` show only the active scene (opacity/display) based on `t_ms`, with a quick 0.4 second cross-fade between scenes.
+   - Keep each scene simple (1-2 characters, a few background shapes) so the total code stays compact.
+9. DETERMINISTIC ONLY: do NOT use requestAnimationFrame, setInterval, setTimeout, Date.now or performance.now. Any JS motion must be computed only from the `t_ms` given to `window.updateSceneTime`. Math.random is allowed only once at start to create particle seeds.
+10. Do NOT draw any subtitle, caption or narration text on screen. Visuals only.
+11. Keep the whole code compact (under about 700 lines) so the reply is not cut off.
+12. Output ONLY valid HTML inside a ```html ... ``` code block, with no explanation before or after.
 """.strip()
 
 
