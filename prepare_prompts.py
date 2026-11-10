@@ -1,5 +1,5 @@
-import os
 import json
+import os
 
 AUDIO_FILE = "input_audio.mp3"
 OUT = "prompts_output"
@@ -8,7 +8,7 @@ WIDTH, HEIGHT = 1280, 720
 
 
 def build_cartoon_rigging_prompt(scene_text, duration, timeline=""):
-    return f"""
+  return f"""
 You are a master 2D Vector Cartoon Animator (like Kurzgesagt / Oversimplified / Adobe Animate).
 Build a complete, self-contained HTML5 document (`<!DOCTYPE html>`) that plays a rich, colorful 2D rigged cartoon animation for this historical narration:
 
@@ -20,16 +20,13 @@ Viewport Size: {WIDTH}x{HEIGHT} pixels
 
 STRICT 2D CARTOON VISUAL & RIGGING RULES:
 1. NO STICKMEN! Draw full-bodied, colorful 2D flat-vector cartoon characters using layered `<svg>` groups (`<g>`).
-   - Every MAIN character (the few people the sentence is really about) MUST have: colored torso/tunic/armor (`<path>` or `<rect rx="...">`), expressive head with skin tone, eyes, eyebrows, headgear (crown, turban, helmet, hat), and separate articulated limbs (`<g class="arm-left">`, `<g class="arm-right">`, `<g class="leg-left">`, `<g class="leg-right">`) holding props that fit the story. Background crowd figures stay simple (head, body, legs).
-   - Choose clothes, headgear, tools, weapons, buildings, vehicles, skin tones and landscape that match the ERA, REGION and CULTURE named in the narration (for example robes and temples for ancient Egypt, longships for Vikings, muskets and flags for 1800s Europe). Never fall back on a default look such as Roman soldiers in a desert.
+   - Every character MUST have: colored torso/tunic/armor (`<path>` or `<rect rx="...">`), expressive head with skin tone, eyes, eyebrows, headgear (crown, turban, helmet, hat), and separate articulated limbs (`<g class="arm-left">`, `<g class="arm-right">`, `<g class="leg-left">`, `<g class="leg-right">`) holding props (swords, shields, scrolls, muskets, flags).
 2. ARTICULATED LIMB RIGGING (CSS Keyframes):
    - Rotate arms and legs around the shoulder/hip joint using the absolute px `transform-origin` described below (do NOT use `fill-box` or `top center`, they pivot at the wrong point).
-   - Animate walking cycles, sword swinging, horse galloping, ship rocking, and flag waving using continuous CSS `@keyframes` (`infinite alternate ease-in-out`).
    - LIMB ATTACHMENT (CRITICAL): every arm and leg must stay attached to the body while moving. Set `transform-origin` in absolute px (e.g. `transform-origin: 28px 40px`) exactly at the shoulder or hip joint, and make the top end of each limb overlap INTO the torso by a few pixels so no gap is ever visible.
    - WALK CYCLE: opposite limbs move together (left arm with right leg, right arm with left leg) using the same duration and timing, with a small body up/down bob in the same rhythm. Never animate limbs with unrelated speeds.
 3. LAYERED PARALLAX ENVIRONMENT:
    - Rich multi-layered SVG background that matches the place and time in the narration (desert, sea, forest, snow, city, palace, battlefield, farmland, etc.): sky colours for the right time of day and weather, distant scenery, mid-ground objects, and foreground terrain.
-   - Apply a slow cinematic camera pan or zoom on the master `<svg>` stage across {duration} seconds.
 4. HTML5 CANVAS ATMOSPHERIC OVERLAY:
    - Include a transparent `<canvas>` overlay on top of the SVG driven by `window.updateSceneTime(t_ms)` to draw dynamic particles (floating embers, dust motes, rain, cannon smoke, or sunbeams) so every single frame is alive.
 5. SYNCHRONIZED CLOCK HOOK (CRITICAL FOR RENDERER):
@@ -48,61 +45,90 @@ STRICT 2D CARTOON VISUAL & RIGGING RULES:
 """.strip()
 
 
-def build_timeline(segments, start, end):
-    """Sentence lines with times relative to the chunk start."""
-    lines = []
-    for sg in segments:
-        mid = (sg.start + sg.end) / 2
-        if start <= mid < end:
-            a = max(sg.start - start, 0.0)
-            b = min(sg.end - start, end - start)
-            lines.append(f"[{a:.1f}s - {b:.1f}s] {sg.text.strip()}")
-    return "\n".join(lines)
+def build_timeline(chunk_segments, chunk_start):
+  """Sentence lines with times strictly relative to the chunk start."""
+  lines = []
+  for sg in chunk_segments:
+    a = max(sg.start - chunk_start, 0.0)
+    b = max(sg.end - chunk_start, 0.0)
+    lines.append(f"[{a:.1f}s - {b:.1f}s] {sg.text.strip()}")
+  return "\n".join(lines)
 
 
 def main():
-    from faster_whisper import WhisperModel
-    from pydub import AudioSegment
+  from faster_whisper import WhisperModel
+  from pydub import AudioSegment
 
-    os.makedirs(OUT, exist_ok=True)
-    print(f"Loading {AUDIO_FILE} ...", flush=True)
-    audio = AudioSegment.from_file(AUDIO_FILE)
-    total = len(audio) / 1000.0
-    chunk_dur = total / TOTAL_CHUNKS
+  os.makedirs(OUT, exist_ok=True)
+  print(f"Loading {AUDIO_FILE} ...", flush=True)
+  audio = AudioSegment.from_file(AUDIO_FILE)
+  total = len(audio) / 1000.0
 
-    print("Transcribing with Faster-Whisper ...", flush=True)
-    model = WhisperModel("base", device="cpu", compute_type="int8")
-    segments = list(model.transcribe(AUDIO_FILE)[0])
+  print("Transcribing with Faster-Whisper ...", flush=True)
+  model = WhisperModel("base", device="cpu", compute_type="int8")
+  segments = list(model.transcribe(AUDIO_FILE)[0])
 
-    meta, combined = [], []
-    for i in range(TOTAL_CHUNKS):
-        start = round(i * chunk_dur, 2)
-        end = round((i + 1) * chunk_dur if i < TOTAL_CHUNKS - 1 else total, 2)
+  if not segments:
+    raise SystemExit("Whisper could not detect any speech in the audio.")
 
-        texts = [
-            s.text.strip() for s in segments
-            if start <= (s.start + s.end) / 2 < end
-        ]
-        text = " ".join(texts).strip() or f"Historical Era Progression Part {i+1}"
-        duration = round(max(end - start, 2.0), 2)
+  target_dur = total / TOTAL_CHUNKS
 
-        audio[int(start * 1000):int(end * 1000)].export(f"{OUT}/audio_{i}.mp3", format="mp3")
+  # সেগমেন্টের সীমানা অনুযায়ী গ্রুপিং লজিক
+  chunks = []
+  current_chunk = []
+  chunk_start = 0.0
 
-        timeline = build_timeline(segments, start, end) or f"[0.0s - {duration:.1f}s] {text}"
-        prompt = build_cartoon_rigging_prompt(text, duration, timeline)
-        with open(f"{OUT}/prompt_{i}.txt", "w", encoding="utf-8") as f:
-            f.write(prompt)
-        combined.append(f"===== PROMPT {i} =====\n{prompt}\n")
+  for sg in segments:
+    current_chunk.append(sg)
+    chunk_elapsed = sg.end - chunk_start
 
-        meta.append({"index": i, "duration": duration, "text": text, "timeline": timeline})
-        print(f"Chunk {i}: {duration}s | {text[:60]}...", flush=True)
+    # বাকি চাংক সংখ্যা চেক করে শেষ সেগমেন্টগুলো শেষ চাংকে ধরে রাখা
+    remaining_chunks = TOTAL_CHUNKS - len(chunks)
+    if remaining_chunks > 1 and chunk_elapsed >= target_dur:
+      chunks.append((chunk_start, sg.end, current_chunk))
+      chunk_start = sg.end
+      current_chunk = []
 
-    with open(f"{OUT}/all_prompts.txt", "w", encoding="utf-8") as f:
-        f.write("\n\n".join(combined))
-    with open(f"{OUT}/chunks.json", "w", encoding="utf-8") as f:
-        json.dump(meta, f, ensure_ascii=False, indent=2)
-    print(f"Done: {OUT}/", flush=True)
+  if current_chunk:
+    chunks.append((chunk_start, total, current_chunk))
+
+  meta, combined = [], []
+  for i, (start, end, chunk_segs) in enumerate(chunks):
+    duration = round(max(end - start, 2.0), 2)
+    text = (
+        " ".join(s.text.strip() for s in chunk_segs).strip()
+        or f"Historical Scene {i+1}"
+    )
+
+    # বাক্য শেষ হওয়ার এক্স্যাক্ট টাইম অনুযায়ী অডিও স্লাইস কাটা
+    audio[int(start * 1000) : int(end * 1000)].export(
+        f"{OUT}/audio_{i}.mp3", format="mp3"
+    )
+
+    timeline = (
+        build_timeline(chunk_segs, start) or f"[0.0s - {duration:.1f}s] {text}"
+    )
+    prompt = build_cartoon_rigging_prompt(text, duration, timeline)
+
+    with open(f"{OUT}/prompt_{i}.txt", "w", encoding="utf-8") as f:
+      f.write(prompt)
+    combined.append(f"===== PROMPT {i} =====\n{prompt}\n")
+
+    meta.append({
+        "index": i,
+        "duration": duration,
+        "text": text,
+        "timeline": timeline,
+    })
+    print(f"Chunk {i}: {duration:.1f}s | {text[:60]}...", flush=True)
+
+  with open(f"{OUT}/all_prompts.txt", "w", encoding="utf-8") as f:
+    f.write("\n\n".join(combined))
+  with open(f"{OUT}/chunks.json", "w", encoding="utf-8") as f:
+    json.dump(meta, f, ensure_ascii=False, indent=2)
+
+  print(f"Done: {OUT}/ ({len(chunks)} chunks created)", flush=True)
 
 
 if __name__ == "__main__":
-    main()
+  main()
