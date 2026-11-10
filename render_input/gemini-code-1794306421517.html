@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Siege of Masada Ramp - 2D Vector Cartoon</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d0a08;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #stage-container {
+      position: relative;
+      width: 1280px;
+      height: 720px;
+      background: #000;
+      overflow: hidden;
+    }
+    #svg-stage {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1280px;
+      height: 720px;
+      transform-origin: 640px 360px;
+    }
+    #canvas-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1280px;
+      height: 720px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Rigged Continuous Keyframes */
+    @keyframes walkA { 0% { transform: rotate(-22deg); } 100% { transform: rotate(22deg); } }
+    @keyframes walkB { 0% { transform: rotate(22deg); } 100% { transform: rotate(-22deg); } }
+    @keyframes bodyBob { 0% { transform: translateY(0px); } 50% { transform: translateY(-6px); } 100% { transform: translateY(0px); } }
+    @keyframes headBob { 0% { transform: rotate(-3deg); } 100% { transform: rotate(3deg); } }
+    @keyframes flagSway { 0% { transform: skewY(0deg) scaleX(1); } 100% { transform: skewY(5deg) scaleX(0.95); } }
+    @keyframes swordPoint { 0% { transform: rotate(-8deg); } 100% { transform: rotate(-38deg); } }
+    @keyframes sunPulse { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(1.1); opacity: 1; } }
+
+    /* Synchronized limb cycles: opposite limbs move together at exactly 0.8s */
+    .anim-leg-l  { animation: walkA 0.8s infinite alternate ease-in-out; }
+    .anim-leg-r  { animation: walkB 0.8s infinite alternate ease-in-out; }
+    .anim-arm-l  { animation: walkB 0.8s infinite alternate ease-in-out; } /* Opposite to left leg */
+    .anim-arm-r  { animation: walkA 0.8s infinite alternate ease-in-out; } /* Opposite to right leg */
+    .anim-bob    { animation: bodyBob 0.8s infinite ease-in-out; }
+    .anim-head   { animation: headBob 1.6s infinite alternate ease-in-out; }
+    .anim-sword  { animation: swordPoint 1.6s infinite alternate ease-in-out; }
+    .anim-flag   { animation: flagSway 1.2s infinite alternate ease-in-out; transform-origin: 30px 40px; }
+    .anim-sun    { animation: sunPulse 3s infinite alternate ease-in-out; transform-origin: 1050px 160px; }
+  </style>
+</head>
+<body>
+
+<div id="stage-container">
+  <svg id="svg-stage" viewBox="0 0 1280 720">
+    <defs>
+      <!-- Desert Gradients -->
+      <linearGradient id="sky1" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#e65100"/>
+        <stop offset="45%" stop-color="#f57c00"/>
+        <stop offset="80%" stop-color="#ffb74d"/>
+        <stop offset="100%" stop-color="#ffe0b2"/>
+      </linearGradient>
+
+      <linearGradient id="sky2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#bf360c"/>
+        <stop offset="50%" stop-color="#f57c00"/>
+        <stop offset="85%" stop-color="#ffa726"/>
+        <stop offset="100%" stop-color="#ffe082"/>
+      </linearGradient>
+
+      <linearGradient id="sky3" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#b71c1c"/>
+        <stop offset="40%" stop-color="#d84315"/>
+        <stop offset="75%" stop-color="#f57c00"/>
+        <stop offset="100%" stop-color="#ffcc80"/>
+      </linearGradient>
+
+      <linearGradient id="sky4" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#d84315"/>
+        <stop offset="50%" stop-color="#f57c00"/>
+        <stop offset="80%" stop-color="#ffb300"/>
+        <stop offset="100%" stop-color="#fff8e1"/>
+      </linearGradient>
+
+      <linearGradient id="goldHelm" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#ffe082"/>
+        <stop offset="50%" stop-color="#ffb300"/>
+        <stop offset="100%" stop-color="#e65100"/>
+      </linearGradient>
+
+      <linearGradient id="tunicRed" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#d32f2f"/>
+        <stop offset="70%" stop-color="#b71c1c"/>
+        <stop offset="100%" stop-color="#7f0000"/>
+      </linearGradient>
+
+      <linearGradient id="dirtSlope" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0%" stop-color="#795548"/>
+        <stop offset="50%" stop-color="#a1887f"/>
+        <stop offset="100%" stop-color="#d7ccc8"/>
+      </linearGradient>
+
+      <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="35%" stop-color="#fff59d"/>
+        <stop offset="70%" stop-color="#ff9800" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="#ff5722" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <!-- ========================================================
+         SCENE 1: PODCAST INTRO & SCORCHING DESERT (0.0s - 7.5s)
+         ======================================================== -->
+    <g class="scene" id="scene-1">
+      <rect x="-100" y="-100" width="1480" height="920" fill="url(#sky1)"/>
+      <circle class="anim-sun" cx="1050" cy="160" r="160" fill="url(#sunGlow)"/>
+      <circle cx="1050" cy="160" r="46" fill="#fffde7"/>
+
+      <!-- Distant rolling dunes & cliffs -->
+      <path d="M-80,480 Q220,380 540,460 T1380,440 L1380,820 L-80,820 Z" fill="#d87a28"/>
+      <path d="M-80,540 Q380,460 760,530 T1380,510 L1380,820 L-80,820 Z" fill="#b95b17"/>
+      <rect x="-80" y="580" width="1480" height="240" fill="#93430c"/>
+
+      <!-- Podcast Host 1 (Left) standing solidly on ground level y=580 -->
+      <g id="s1-host1" transform="translate(260, 360)">
+        <ellipse cx="50" cy="225" rx="42" ry="9" fill="rgba(60,20,5,0.4)"/>
+        <!-- Left Leg: Hip joint at (38px, 142px), overlaps 6px into torso -->
+        <g class="anim-leg-l" style="transform-origin: 38px 142px;">
+          <rect x="31" y="138" width="14" height="85" rx="5" fill="#3e2723"/>
+          <rect x="25" y="215" width="24" height="14" rx="4" fill="#212121"/>
+        </g>
+        <!-- Right Leg: Hip joint at (62px, 142px) -->
+        <g class="anim-leg-r" style="transform-origin: 62px 142px;">
+          <rect x="55" y="138" width="14" height="85" rx="5" fill="#3e2723"/>
+          <rect x="49" y="215" width="24" height="14" rx="4" fill="#212121"/>
+        </g>
+        <!-- Bobbing Torso & Head -->
+        <g class="anim-bob">
+          <rect x="24" y="65" width="52" height="82" rx="12" fill="#0277bd"/>
+          <polygon points="42,65 58,65 54,92 46,92" fill="#e1f5fe"/>
+          <!-- Arm Left (opposite to left leg, holds mic): Shoulder joint at (26px, 76px) -->
+          <g class="anim-arm-l" style="transform-origin: 26px 76px;">
+            <rect x="18" y="72" width="14" height="48" rx="6" fill="#0277bd"/>
+            <rect x="18" y="114" width="12" height="25" rx="5" fill="#e0a96d"/>
+            <rect x="12" y="132" width="16" height="22" rx="6" fill="#37474f"/>
+            <line x1="20" y1="154" x2="20" y2="175" stroke="#212121" stroke-width="3"/>
+          </g>
+          <!-- Arm Right: Shoulder joint at (74px, 76px) -->
+          <g class="anim-arm-r" style="transform-origin: 74px 76px;">
+            <rect x="68" y="72" width="14" height="50" rx="6" fill="#0277bd"/>
+            <circle cx="75" cy="126" r="7" fill="#e0a96d"/>
+          </g>
+          <!-- Head: Neck joint at (50px, 65px) -->
+          <g class="anim-head" style="transform-origin: 50px 65px;">
+            <ellipse cx="50" cy="40" rx="20" ry="22" fill="#e0a96d"/>
+            <path d="M30,34 C30,14 70,14 70,34 Q66,22 50,22 Q34,22 30,34 Z" fill="#422513"/>
+            <path d="M28,38 C28,15 72,15 72,38" stroke="#212121" stroke-width="5" fill="none"/>
+            <rect x="25" y="32" width="8" height="16" rx="3" fill="#ffb300"/>
+            <rect x="67" y="32" width="8" height="16" rx="3" fill="#ffb300"/>
+            <circle cx="44" cy="38" r="3" fill="#212121"/>
+            <circle cx="56" cy="38" r="3" fill="#212121"/>
+            <path d="M46,49 Q50,54 55,49" stroke="#795548" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- Podcast Host 2 (Right) standing solidly on ground level y=580 -->
+      <g id="s1-host2" transform="translate(860, 360)">
+        <ellipse cx="50" cy="225" rx="42" ry="9" fill="rgba(60,20,5,0.4)"/>
+        <!-- Left Leg: Hip joint at (38px, 142px) -->
+        <g class="anim-leg-r" style="transform-origin: 38px 142px;">
+          <rect x="31" y="138" width="14" height="85" rx="5" fill="#263238"/>
+          <rect x="25" y="215" width="24" height="14" rx="4" fill="#eceff1"/>
+        </g>
+        <!-- Right Leg: Hip joint at (62px, 142px) -->
+        <g class="anim-leg-l" style="transform-origin: 62px 142px;">
+          <rect x="55" y="138" width="14" height="85" rx="5" fill="#263238"/>
+          <rect x="49" y="215" width="24" height="14" rx="4" fill="#eceff1"/>
+        </g>
+        <!-- Torso & Head -->
+        <g class="anim-bob">
+          <rect x="24" y="65" width="52" height="82" rx="12" fill="#2e7d32"/>
+          <g class="anim-arm-r" style="transform-origin: 26px 76px;">
+            <rect x="18" y="72" width="14" height="50" rx="6" fill="#2e7d32"/>
+            <circle cx="25" cy="126" r="7" fill="#ffcc80"/>
+          </g>
+          <g class="anim-arm-l" style="transform-origin: 74px 76px;">
+            <rect x="68" y="72" width="14" height="48" rx="6" fill="#2e7d32"/>
+            <rect x="70" y="114" width="12" height="25" rx="5" fill="#ffcc80"/>
+            <rect x="72" y="132" width="16" height="22" rx="6" fill="#37474f"/>
+          </g>
+          <g class="anim-head" style="transform-origin: 50px 65px;">
+            <ellipse cx="50" cy="40" rx="20" ry="22" fill="#ffcc80"/>
+            <path d="M30,32 C28,15 72,15 70,32 Q64,20 50,22 Q36,20 30,32 Z" fill="#212121"/>
+            <path d="M28,38 C28,15 72,15 72,38" stroke="#c62828" stroke-width="5" fill="none"/>
+            <rect x="25" y="32" width="8" height="16" rx="3" fill="#c62828"/>
+            <rect x="67" y="32" width="8" height="16" rx="3" fill="#c62828"/>
+            <circle cx="44" cy="38" r="3" fill="#212121"/>
+            <circle cx="56" cy="38" r="3" fill="#212121"/>
+            <path d="M45,49 Q50,54 55,49" stroke="#795548" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- ========================================================
+         SCENE 2: THE 2,000-YEAR OLD DIRT RAMP (7.5s - 15.0s)
+         ======================================================== -->
+    <g class="scene" id="scene-2">
+      <rect x="-100" y="-100" width="1480" height="920" fill="url(#sky2)"/>
+      <circle cx="320" cy="140" r="100" fill="url(#sunGlow)"/>
+
+      <!-- Masada Rock Mountain Fortress -->
+      <polygon points="720,170 1380,170 1380,620 620,620" fill="#793213"/>
+      <!-- Fortress Battlements & Towers -->
+      <rect x="720" y="142" width="660" height="28" fill="#9c461d"/>
+      <rect x="760" y="122" width="36" height="20" fill="#9c461d"/>
+      <rect x="880" y="122" width="36" height="20" fill="#9c461d"/>
+      <rect x="1020" y="122" width="36" height="20" fill="#9c461d"/>
+      <rect x="1160" y="122" width="36" height="20" fill="#9c461d"/>
+
+      <!-- Giant 2,000 Year Old Dirt Ramp Structure -->
+      <polygon points="120,620 780,210 890,210 920,620" fill="url(#dirtSlope)"/>
+      <!-- Retaining Timber Braces / Agger Framework -->
+      <g stroke="#4a2511" stroke-width="4" opacity="0.85">
+        <line x1="280" y1="540" x2="350" y2="500"/>
+        <line x1="420" y1="460" x2="500" y2="420"/>
+        <line x1="580" y1="370" x2="660" y2="330"/>
+        <line x1="720" y1="280" x2="780" y2="245"/>
+        <line x1="290" y1="500" x2="340" y2="550"/>
+        <line x1="430" y1="420" x2="490" y2="470"/>
+        <line x1="590" y1="330" x2="650" y2="380"/>
+      </g>
+      <!-- Ramp slope path line -->
+      <line x1="120" y1="618" x2="785" y2="208" stroke="#ffe082" stroke-width="7"/>
+      <rect x="-80" y="620" width="1480" height="200" fill="#6d2b0e"/>
+
+      <!-- Roman Engineer / Centurion Inspector (Left) standing solidly on ground level y=620 -->
+      <g id="s2-centurion" transform="translate(180, 420)">
+        <ellipse cx="44" cy="205" rx="36" ry="9" fill="rgba(60,20,5,0.45)"/>
+        <!-- Legs: Hip joints at (30px, 126px) and (58px, 126px) -->
+        <g class="anim-leg-l" style="transform-origin: 30px 126px;">
+          <rect x="23" y="122" width="14" height="82" rx="5" fill="#d79a6b"/>
+          <rect x="18" y="194" width="22" height="14" rx="4" fill="#3e2723"/>
+        </g>
+        <g class="anim-leg-r" style="transform-origin: 58px 126px;">
+          <rect x="51" y="122" width="14" height="82" rx="5" fill="#d79a6b"/>
+          <rect x="46" y="194" width="22" height="14" rx="4" fill="#3e2723"/>
+        </g>
+        <!-- Body & Armor -->
+        <g class="anim-bob">
+          <path d="M16,50 L72,50 L76,128 L12,128 Z" fill="url(#tunicRed)"/>
+          <!-- Shoulder joint at (18px, 58px) holding scroll -->
+          <g class="anim-arm-r" style="transform-origin: 18px 58px;">
+            <rect x="12" y="55" width="13" height="46" rx="5" fill="#d79a6b"/>
+            <rect x="4" y="94" width="24" height="12" rx="4" fill="#fff8e1" stroke="#8d6e63" stroke-width="2"/>
+          </g>
+          <!-- Shoulder joint at (70px, 58px) pointing measuring baton -->
+          <g class="anim-sword" style="transform-origin: 70px 58px;">
+            <rect x="64" y="55" width="13" height="48" rx="5" fill="#d79a6b"/>
+            <circle cx="71" cy="106" r="7" fill="#d79a6b"/>
+            <rect x="68" y="86" width="7" height="46" rx="3" fill="#ffb300" stroke="#b57c00" stroke-width="1.5"/>
+          </g>
+          <!-- Head: Neck joint at (44px, 50px) -->
+          <g class="anim-head" style="transform-origin: 44px 50px;">
+            <ellipse cx="44" cy="28" rx="17" ry="19" fill="#d79a6b"/>
+            <path d="M26,24 C26,5 62,5 62,24 Z" fill="url(#goldHelm)"/>
+            <rect x="22" y="22" width="44" height="5" rx="2" fill="#ffb300"/>
+            <path d="M20,10 Q44,-4 68,10" stroke="#b71c1c" stroke-width="7" fill="none" stroke-linecap="round"/>
+            <circle cx="50" cy="26" r="3" fill="#212121"/>
+            <path d="M44,38 Q51,42 58,38" stroke="#5d4037" stroke-width="2" fill="none"/>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- ========================================================
+         SCENE 3: 15,000 SOLDIERS - BUCKET BY BUCKET (15.0s - 22.5s)
+         ======================================================== -->
+    <g class="scene" id="scene-3">
+      <rect x="-100" y="-100" width="1480" height="920" fill="url(#sky3)"/>
+      <circle cx="700" cy="130" r="80" fill="url(#sunGlow)"/>
+
+      <!-- Camp Ground & Earth Mound -->
+      <polygon points="-80,510 380,440 820,530 1380,470 1380,820 -80,820 Z" fill="#9c3b12"/>
+      <rect x="-80" y="560" width="1480" height="260" fill="#6d2306"/>
+
+      <!-- Roman SPQR Standard in Background -->
+      <g transform="translate(620, 220)">
+        <rect x="18" y="0" width="7" height="340" fill="#4e342e"/>
+        <g class="anim-flag">
+          <rect x="25" y="20" width="85" height="55" fill="#b71c1c"/>
+          <text x="67" y="54" fill="#ffd54f" font-size="16" font-weight="bold" text-anchor="middle" font-family="sans-serif">SPQR</text>
+        </g>
+        <circle cx="21" cy="0" r="14" fill="url(#goldHelm)"/>
+      </g>
+
+      <!-- Roman Soldier 1: Dragging earth bucket by bucket, standing upright on ground level y=560 -->
+      <g id="s3-soldier1" transform="translate(240, 340)">
+        <ellipse cx="44" cy="225" rx="36" ry="9" fill="rgba(60,20,5,0.45)"/>
+        <!-- Hip joint at (30px, 138px) -->
+        <g class="anim-leg-l" style="transform-origin: 30px 138px;">
+          <rect x="24" y="134" width="13" height="88" rx="5" fill="#e0a96d"/>
+          <rect x="19" y="212" width="22" height="14" rx="4" fill="#3e2723"/>
+        </g>
+        <!-- Hip joint at (58px, 138px) -->
+        <g class="anim-leg-r" style="transform-origin: 58px 138px;">
+          <rect x="52" y="134" width="13" height="88" rx="5" fill="#e0a96d"/>
+          <rect x="47" y="212" width="22" height="14" rx="4" fill="#3e2723"/>
+        </g>
+        <!-- Body -->
+        <g class="anim-bob">
+          <path d="M16,62 L72,62 L76,140 L12,140 Z" fill="url(#tunicRed)"/>
+          <!-- Shoulder joint at (20px, 72px) carrying heavy earth bucket -->
+          <g class="anim-arm-l" style="transform-origin: 20px 72px;">
+            <rect x="14" y="68" width="13" height="64" rx="6" fill="#e0a96d"/>
+            <circle cx="20" cy="134" r="7" fill="#e0a96d"/>
+            <!-- Wooden bucket with earth -->
+            <path d="M7,138 L33,138 L29,174 L11,174 Z" fill="#8d6e63" stroke="#4e342e" stroke-width="2"/>
+            <ellipse cx="20" cy="138" rx="13" ry="5" fill="#4e2711"/>
+            <line x1="20" y1="134" x2="20" y2="138" stroke="#37474f" stroke-width="2"/>
+          </g>
+          <!-- Shoulder joint at (68px, 72px) swinging naturally -->
+          <g class="anim-arm-r" style="transform-origin: 68px 72px;">
+            <rect x="62" y="68" width="13" height="58" rx="6" fill="#e0a96d"/>
+            <circle cx="68" cy="128" r="7" fill="#e0a96d"/>
+          </g>
+          <!-- Head: Neck joint at (44px, 62px) -->
+          <g class="anim-head" style="transform-origin: 44px 62px;">
+            <ellipse cx="44" cy="36" rx="17" ry="19" fill="#e0a96d"/>
+            <path d="M26,32 C26,12 62,12 62,32 Z" fill="url(#goldHelm)"/>
+            <circle cx="51" cy="35" r="3" fill="#212121"/>
+            <path d="M46,47 Q51,43 56,47" stroke="#4e342e" stroke-width="2" fill="none"/>
+            <!-- Straining sweat drop -->
+            <path d="M60,30 Q63,34 60,38 Q57,34 60,30 Z" fill="#81d4fa"/>
+          </g>
+        </g>
+      </g>
+
+      <!-- Roman Soldier 2: Marching with second bucket, standing upright on ground level y=560 -->
+      <g id="s3-soldier2" transform="translate(820, 340)">
+        <ellipse cx="44" cy="225" rx="36" ry="9" fill="rgba(60,20,5,0.45)"/>
+        <!-- Hip joint at (30px, 138px) -->
+        <g class="anim-leg-r" style="transform-origin: 30px 138px;">
+          <rect x="24" y="134" width="13" height="88" rx="5" fill="#d79a6b"/>
+          <rect x="19" y="212" width="22" height="14" rx="4" fill="#3e2723"/>
+        </g>
+        <!-- Hip joint at (58px, 138px) -->
+        <g class="anim-leg-l" style="transform-origin: 58px 138px;">
+          <rect x="52" y="134" width="13" height="88" rx="5" fill="#d79a6b"/>
+          <rect x="47" y="212" width="22" height="14" rx="4" fill="#3e2723"/>
+        </g>
+        <!-- Body -->
+        <g class="anim-bob">
+          <path d="M16,62 L72,62 L76,140 L12,140 Z" fill="url(#tunicRed)"/>
+          <!-- Shoulder joint at (20px, 72px) -->
+          <g class="anim-arm-r" style="transform-origin: 20px 72px;">
+            <rect x="14" y="68" width="13" height="58" rx="6" fill="#d79a6b"/>
+            <circle cx="20" cy="128" r="7" fill="#d79a6b"/>
+          </g>
+          <!-- Shoulder joint at (68px, 72px) carrying bucket -->
+          <g class="anim-arm-l" style="transform-origin: 68px 72px;">
+            <rect x="62" y="68" width="13" height="64" rx="6" fill="#d79a6b"/>
+            <circle cx="68" cy="134" r="7" fill="#d79a6b"/>
+            <!-- Bucket -->
+            <path d="M55,138 L81,138 L77,174 L59,174 Z" fill="#8d6e63" stroke="#4e342e" stroke-width="2"/>
+            <ellipse cx="68" cy="138" rx="13" ry="5" fill="#4e2711"/>
+            <line x1="68" y1="134" x2="68" y2="138" stroke="#37474f" stroke-width="2"/>
+          </g>
+          <!-- Head -->
+          <g class="anim-head" style="transform-origin: 44px 62px;">
+            <ellipse cx="44" cy="36" rx="17" ry="19" fill="#d79a6b"/>
+            <path d="M26,32 C26,12 62,12 62,32 Z" fill="url(#goldHelm)"/>
+            <circle cx="37" cy="35" r="3" fill="#212121"/>
+            <path d="M32,47 Q37,43 42,47" stroke="#4e342e" stroke-width="2" fill="none"/>
+            <path d="M28,30 Q31,34 28,38 Q25,34 28,30 Z" fill="#81d4fa"/>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- ========================================================
+         SCENE 4: SETTLING A GRUDGE - THIS PIECE OF LAND (22.5s - 30.0s)
+         ======================================================== -->
+    <g class="scene" id="scene-4">
+      <rect x="-100" y="-100" width="1480" height="920" fill="url(#sky4)"/>
+      <circle cx="980" cy="160" r="100" fill="url(#sunGlow)"/>
+
+      <!-- Overlook Ridge & Plateau -->
+      <polygon points="-80,390 480,390 620,820 -80,820" fill="#6d2b0e"/>
+      <polygon points="460,390 1380,510 1380,820 600,820" fill="#4e1d08"/>
+
+      <!-- Distant Canyon Horizon & Masada Summit -->
+      <polygon points="480,410 740,360 920,400 1380,320 1380,520 480,520" fill="#bf5e1f" opacity="0.6"/>
+      <rect x="1000" y="280" width="180" height="34" fill="#8d3d19"/>
+
+      <!-- General Flavius Silva: Settling the Grudge, standing upright on cliff edge y=390 -->
+      <g id="s4-general" transform="translate(240, 150)">
+        <ellipse cx="60" cy="245" rx="50" ry="12" fill="rgba(30,10,3,0.5)"/>
+        <!-- Red Cape -->
+        <path class="anim-flag" d="M30,85 Q-15,140 0,225 Q40,215 45,160 Z" fill="#b71c1c"/>
+        <!-- Hip joint at (44px, 155px) -->
+        <g class="anim-leg-l" style="transform-origin: 44px 155px;">
+          <rect x="37" y="150" width="15" height="92" rx="6" fill="#e0a96d"/>
+          <path d="M33,170 L53,170 L51,225 L35,225 Z" fill="url(#goldHelm)"/>
+          <rect x="30" y="234" width="26" height="14" rx="4" fill="#3e2723"/>
+        </g>
+        <!-- Hip joint at (76px, 155px) -->
+        <g class="anim-leg-r" style="transform-origin: 76px 155px;">
+          <rect x="69" y="150" width="15" height="92" rx="6" fill="#e0a96d"/>
+          <path d="M65,170 L85,170 L83,225 L67,225 Z" fill="url(#goldHelm)"/>
+          <rect x="62" y="234" width="26" height="14" rx="4" fill="#3e2723"/>
+        </g>
+        <!-- Torso & Arms -->
+        <g class="anim-bob">
+          <path d="M28,75 L92,75 C96,105 94,135 88,158 L32,158 C26,135 24,105 28,75 Z" fill="url(#goldHelm)" stroke="#b57c00" stroke-width="2"/>
+          <!-- Shoulder joint at (30px, 82px) holding Scutum Shield -->
+          <g class="anim-arm-l" style="transform-origin: 30px 82px;">
+            <rect x="23" y="78" width="14" height="56" rx="6" fill="#e0a96d"/>
+            <rect x="-8" y="96" width="38" height="92" rx="6" fill="#b71c1c" stroke="#ffb300" stroke-width="2.5"/>
+            <circle cx="11" cy="142" r="9" fill="url(#goldHelm)"/>
+          </g>
+          <!-- Shoulder joint at (90px, 82px) holding drawn Gladius Sword -->
+          <g class="anim-sword" style="transform-origin: 90px 82px;">
+            <rect x="84" y="78" width="14" height="52" rx="6" fill="#e0a96d"/>
+            <circle cx="91" cy="132" r="7" fill="#e0a96d"/>
+            <!-- Gladius pointing forward -->
+            <g transform="translate(91, 132) rotate(-35)">
+              <rect x="-3" y="0" width="6" height="14" fill="#5d4037"/>
+              <rect x="-11" y="14" width="22" height="5" fill="url(#goldHelm)"/>
+              <polygon points="-5,19 5,19 4,70 0,82 -4,70" fill="#eceff1" stroke="#90a4ae" stroke-width="1.5"/>
+            </g>
+          </g>
+          <!-- Head: Neck joint at (60px, 75px) -->
+          <g class="anim-head" style="transform-origin: 60px 75px;">
+            <ellipse cx="60" cy="45" rx="20" ry="22" fill="#e0a96d"/>
+            <path d="M40,38 C40,14 80,14 80,38 Z" fill="url(#goldHelm)"/>
+            <path d="M30,22 Q60,2 90,22 Q60,11 30,22 Z" fill="#d32f2f"/>
+            <circle cx="68" cy="42" r="3.5" fill="#212121"/>
+            <path d="M62,36 L76,40" stroke="#3e2723" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M58,54 Q66,50 72,54" stroke="#5d4037" stroke-width="2.5" fill="none"/>
+          </g>
+        </g>
+      </g>
+    </g>
+  </svg>
+
+  <!-- Atmospheric Dynamic Canvas Particle Overlay -->
+  <canvas id="canvas-overlay" width="1280" height="720"></canvas>
+</div>
+
+<script>
+  // DOM references
+  const svgStage = document.getElementById('svg-stage');
+  const canvas = document.getElementById('canvas-overlay');
+  const ctx = canvas.getContext('2d');
+
+  const scenes = [
+    document.getElementById('scene-1'),
+    document.getElementById('scene-2'),
+    document.getElementById('scene-3'),
+    document.getElementById('scene-4')
+  ];
+
+  // Exactly 30.0s (30,000ms): 4 scenes of 7.5s each
+  const SCENE_TIMES = [
+    { start: 0,     end: 7500 },
+    { start: 7500,  end: 15000 },
+    { start: 15000, end: 22500 },
+    { start: 22500, end: 30000 }
+  ];
+
+  // Pseudo-random particle seeds created once at start (deterministic simulation)
+  const NUM_PARTICLES = 60;
+  const particles = [];
+  for (let i = 0; i < NUM_PARTICLES; i++) {
+    particles.push({
+      xInit: Math.random() * 1280,
+      yInit: Math.random() * 720,
+      speedX: 25 + Math.random() * 45,
+      speedY: -10 - Math.random() * 20,
+      size: 1.5 + Math.random() * 3,
+      alpha: 0.25 + Math.random() * 0.5,
+      phase: Math.random() * Math.PI * 2,
+      isEmber: Math.random() > 0.65
+    });
+  }
+
+  /**
+   * Deterministic Synchronized Clock Hook (Critical for Renderer)
+   * Updates scenes, camera zoom/pan, character ground translation, and canvas particles.
+   * Absolutely NO requestAnimationFrame, Date.now, setInterval or CSS transitions!
+   * @param {number} t_ms - Elapsed time in milliseconds (0 - 30000)
+   */
+  window.updateSceneTime = function(t_ms) {
+    const t = Math.max(0, Math.min(30000, t_ms));
+    const sec = t / 1000;
+    const fade = 400; // 0.4s cross-fade
+
+    // 1. Scene switching & cross-fading via deterministic opacity & display
+    for (let i = 0; i < 4; i++) {
+      const dur = SCENE_TIMES[i];
+      let op = 0;
+      if (t >= dur.start && t <= dur.end) {
+        op = 1;
+        if (t - dur.start < fade && i > 0) {
+          op = (t - dur.start) / fade;
+        } else if (dur.end - t < fade && i < 3) {
+          op = (dur.end - t) / fade;
+        }
+      }
+      scenes[i].style.opacity = op;
+      scenes[i].style.display = (op > 0) ? 'block' : 'none';
+    }
+
+    // 2. Slow cinematic camera pan and zoom across 30.0s (bounded to prevent edge exposure)
+    // Scale goes from 1.0 to 1.08; max allowed horizontal translate is (1.08 - 1) * 640 = 51.2px
+    const p = t / 30000;
+    const camZoom = 1.0 + Math.sin(p * Math.PI) * 0.07;
+    const maxPanX = (camZoom - 1.0) * 640;
+    const camPanX = -maxPanX * Math.sin(p * Math.PI);
+    const camPanY = -((camZoom - 1.0) * 360) * Math.sin(p * Math.PI);
+    svgStage.style.transform = `translate(${camPanX}px, ${camPanY}px) scale(${camZoom})`;
+
+    // 3. Grounded Deterministic Character Translations
+    // Scene 3: Two soldiers walking with buckets across the camp ground level y=340
+    if (t >= 15000 && t <= 22500) {
+      const s3t = (t - 15000) / 1000;
+      const s3Soldier1 = document.getElementById('s3-soldier1');
+      const s3Soldier2 = document.getElementById('s3-soldier2');
+      if (s3Soldier1) {
+        const xPos1 = 200 + (s3t * 32) % 360;
+        s3Soldier1.setAttribute('transform', `translate(${xPos1}, 340)`);
+      }
+      if (s3Soldier2) {
+        const xPos2 = 840 - (s3t * 28) % 340;
+        s3Soldier2.setAttribute('transform', `translate(${xPos2}, 340)`);
+      }
+    }
+
+    // 4. Deterministic Canvas Atmospheric Overlay (Desert dust, heat shimmers)
+    ctx.clearRect(0, 0, 1280, 720);
+    for (let i = 0; i < NUM_PARTICLES; i++) {
+      const pt = particles[i];
+      const curX = (pt.xInit + pt.speedX * sec) % 1340 - 30;
+      const wave = Math.sin(sec * 2 + pt.phase) * 15;
+      const curY = (pt.yInit + pt.speedY * sec + wave) % 760 - 20;
+
+      ctx.beginPath();
+      ctx.arc(curX < 0 ? curX + 1300 : curX, curY < 0 ? curY + 740 : curY, pt.size, 0, Math.PI * 2);
+      ctx.fillStyle = pt.isEmber
+        ? `rgba(255, 120, 40, ${pt.alpha})`
+        : `rgba(255, 235, 160, ${pt.alpha * 0.8})`;
+      ctx.fill();
+    }
+  };
+
+  // Initialize at frame 0
+  window.updateSceneTime(0);
+</script>
+
+</body>
+</html>
