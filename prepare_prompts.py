@@ -40,17 +40,11 @@ STRICT 2D CARTOON VISUAL & RIGGING RULES:
 8. TIMING & SCENES FOLLOW THE TIMED NARRATION: the animation length is exactly {duration} seconds ({int(duration*1000)} ms). Use this exact value everywhere; do not loop.
    - Make one scene per timed sentence above (merge a sentence shorter than 3 seconds into its neighbour). A scene must start exactly at that sentence's start time and end at its end time, so the picture always matches what is being said right now.
    - Build each scene as its own `<g class="scene" id="scene-N">`. Inside `window.updateSceneTime(t_ms)` show only the active scene (opacity/display) based on `t_ms`, with a quick 0.4 second cross-fade between scenes. Every scene needs a different location, camera angle or action; never repeat the same picture.
-8b. VISUALS MUST MATCH THE WORDS (MOST IMPORTANT): every number, quantity, person, place, year and action in a sentence must be clearly visible in that sentence's scene.
-   - QUANTITIES: show amounts in proportion with a crowd made by a JS loop. Draw at most about 150 small figures for the largest number in the clip and scale the others by ratio (for example if the largest number is 10,000 it gets 150 figures, then 5,000 gets 75 and 500 gets about 8), so a bigger number always looks visibly bigger. Always add a short label with the real number.
-   - CHANGES: when the narration says a number grows, shrinks, wins or loses, animate it (figures appear, march in, or fade out) at the moment it is spoken.
-   - COMPARISONS: show both sides at once, left versus right, each with its label.
-   - Keep the code compact: draw the background with a few shapes and put the effort into the figures the sentence is about.
 9. DETERMINISTIC ONLY: do NOT use requestAnimationFrame, setInterval, setTimeout, Date.now or performance.now. Any JS motion must be computed only from the `t_ms` given to `window.updateSceneTime`. Math.random is allowed only once at start to create particle seeds.
 10. NEVER use CSS `transition` or JS-driven animations for opacity/position (they run in real time and break frame capture). Set opacity, display and transforms only from `window.updateSceneTime(t_ms)`. CSS `@keyframes` is allowed only for limb/loop movement.
 11. CAMERA: when panning or zooming the stage, never expose its edges. Draw backgrounds wider than 1280x720 and keep translate smaller than (scale-1)*640 horizontally.
 12. Short on-screen labels ARE allowed and encouraged for numbers, years, place names and who is who, copied from the narration (for example the army size, the year, the city or the person's name): at most 4 words each, in clear large text. Do NOT write full sentences, subtitles or captions of the narration.
-13. Keep the whole code compact (under about 700 lines) so the reply is not cut off.
-14. Output ONLY valid HTML inside a ```html ... ``` code block, with no explanation before or after.
+13. Output ONLY valid HTML inside a ```html ... ``` code block, with no explanation before or after.
 """.strip()
 
 
