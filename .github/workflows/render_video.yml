@@ -2,6 +2,11 @@ name: Render Video (No API)
 
 on:
   workflow_dispatch:
+    inputs:
+      drive_zip:
+        description: 'Drive zip link (Anyone with the link)'
+        required: true
+        type: string
 
 jobs:
   plan:
@@ -10,6 +15,17 @@ jobs:
       matrix: ${{ steps.p.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download inputs from Drive
+        env:
+          DRIVE_ZIP: ${{ inputs.drive_zip }}
+        run: |
+          pip install gdown
+          gdown "$DRIVE_ZIP" -O inputs.zip
+          unzip -o inputs.zip -d render_input
+          ls render_input
       - id: p
         name: Find scene files
         run: |
@@ -30,6 +46,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Download inputs from Drive
+        env:
+          DRIVE_ZIP: ${{ inputs.drive_zip }}
+        run: |
+          pip install gdown
+          gdown "$DRIVE_ZIP" -O inputs.zip
+          unzip -o inputs.zip -d render_input
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
@@ -59,7 +82,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Merge Clips
         run: python render_scenes.py merge
-      - uses: actions/upload-artifact@v4
-        with:
-          name: final-video
-          path: final_video.mp4
+      - name: Upload Final Video to Drive
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+        run: python upload_to_drive.py final_video.mp4 final-video
