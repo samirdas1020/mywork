@@ -10,7 +10,7 @@ WIDTH, HEIGHT = 1280, 720
 def build_cartoon_rigging_prompt(scene_text, duration, timeline=""):
   duration_ms = int(duration * 1000)
   return f"""
-You are an expert 2D Vector Animator. Build a complete, self-contained HTML5 file (`<!DOCTYPE html>`) featuring an animated SVG scene matching this historical narration:
+You are an expert 2D Vector Animator (Kurzgesagt / OverSimplified style). Build a self-contained HTML5 file (`<!DOCTYPE html>`) with dynamic, fast-paced multi-shot vector animation.
 
 Narration: "{scene_text}"
 Total Duration: {duration} seconds ({duration_ms} ms)
@@ -18,35 +18,32 @@ Timed Sequence:
 {timeline}
 Canvas Viewport: {WIDTH}x{HEIGHT} pixels
 
-CRITICAL TECHNICAL RULES:
-1. DETERMINISTIC DRIVER (RENDER ENGINE HOOK):
-   - Provide a global function: `window.updateSceneTime = function(t_ms) {{ ... }}`.
-   - All character movements, limb rotations, scene switches, and camera pans MUST be driven strictly by `t_ms` (from 0 to {duration_ms}).
-   - ABSOLUTELY FORBIDDEN: Do NOT use `requestAnimationFrame`, `setInterval`, `setTimeout`, `Date.now()`, `performance.now()`, or CSS `@keyframes`. Using any of these will crash the headless renderer.
+CRITICAL SCENE & SHOT RULES (AVOID STATIC SCENES):
+1. MULTIPLE SHOTS PER CLIP (MANDATORY):
+   - A single static background for {duration}s is UNACCEPTABLE.
+   - Divide this clip into at least 3 to 4 DISTINCT visual shots using grouped layers:
+     * `<g id="shot-1">...</g>` (e.g., Establishing wide scenery)
+     * `<g id="shot-2">...</g>` (e.g., Close-up character action)
+     * `<g id="shot-3">...</g>` (e.g., Infographic, map diagram, or battlefield cutaway)
+   - In `window.updateSceneTime(t_ms)`, strictly toggle their visibility (`display: none/inline` or instant opacity 0/1) based on the Timed Sequence timestamps so the camera actually CUTS to new scenes every 4-8 seconds.
 
-2. SCENE & CHARACTER DESIGN (PURE SVG):
-   - Style: High-contrast, colorful flat-vector cartoon (Kurzgesagt / OverSimplified style). No stick figures.
-   - Characters: Built using SVG groups (`<g>`) with distinct colored torsos, heads, expressive facial features, and articulated arms/legs.
-   - Grounding: Keep character feet aligned firmly to the ground terrain (do not let characters float).
+2. DETERMINISTIC DRIVER (RENDER HOOK):
+   - Provide `window.updateSceneTime = function(t_ms) {{ ... }}`.
+   - Strictly NO `requestAnimationFrame`, `setInterval`, `setTimeout`, `Date.now()`, or CSS `@keyframes`.
+   - All limb movements, transitions, and scene cuts MUST be driven purely by `t_ms` (0 to {duration_ms}).
 
 3. RIGGING & MOTION:
-   - Limbs must rotate cleanly using inline SVG transform attributes or `transform-origin` (e.g., pivot at shoulder/hip).
-   - Use simple sine-wave math driven by `t_ms` for walking/action cycles (e.g., `Math.sin(t_ms * 0.008) * 20`).
-   - For arm/leg groups, set `transform-origin` properly so limbs never detach from the torso.
+   - Dynamic character poses: characters must actually move, react, and gesture matching the narration line.
+   - Limbs swing using simple sine waves driven by `t_ms` pivoted at the shoulder/hip joint.
 
-4. TIMELINE & NARRATION SYNCHRONIZATION:
-   - Match the visual actions directly to the timestamps provided in the Timed Sequence.
-   - When a cue begins, transition character poses, trigger actions (e.g., raising arms, drawing swords, sailing), or switch active groups using opacity/transform interpolations based on `t_ms`.
+4. VISUAL STYLE:
+   - High-contrast, clean 2D vector art with bold outlines and expressive colors.
+   - No substitle.
+   - If needed short on-screen text labels (max 4 words: dates, locations, or names) timed to appear during relevant cues.
 
-5. ENVIRONMENT & COMPOSITION:
-   - Draw layered vector backgrounds (sky/backdrop, midground scenery/structures, foreground terrain) slightly larger than {WIDTH}x{HEIGHT} to allow subtle camera zooms or pans without revealing canvas borders.
-   - Optional: Short on-screen text labels (max 4 words: dates, locations, or names) timed to appear during relevant cues.
-
-6. OUTPUT FORMAT:
-   - Output ONLY the standalone HTML code wrapped inside a single ```html ... ``` block.
-   - No explanations, notes, or introductions before or after the code block.
+5. OUTPUT:
+   - Output ONLY the standalone HTML code wrapped inside a single ```html ... ``` block. No explanations.
 """.strip()
-
 
 def build_timeline(chunk_segments, chunk_start, chunk_duration):
   """Sentence lines with times strictly relative to chunk start, filling gaps."""
