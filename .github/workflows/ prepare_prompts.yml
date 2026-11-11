@@ -2,6 +2,11 @@ name: Prepare Prompts (No API)
 
 on:
   workflow_dispatch:
+    inputs:
+      drive_url:
+        description: 'Google Drive audio link (shared: Anyone with the link)'
+        required: true
+        type: string
 
 jobs:
   prepare:
@@ -14,7 +19,13 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install faster-whisper pydub
+          pip install faster-whisper pydub gdown
+      - name: Download Audio from Drive
+        env:
+          DRIVE_URL: ${{ inputs.drive_url }}
+        run: |
+          gdown --fuzzy "$DRIVE_URL" -O input_audio.mp3
+          ls -lh input_audio.mp3
       - name: Split Audio, Transcribe & Build Prompts
         env:
           PYTHONUNBUFFERED: "1"
