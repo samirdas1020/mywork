@@ -30,8 +30,9 @@ jobs:
         env:
           PYTHONUNBUFFERED: "1"
         run: python -u prepare_prompts.py
-      - name: Upload Prompts Package
-        uses: actions/upload-artifact@v4
-        with:
-          name: prompts-package
-          path: prompts_output/
+      - name: Upload Prompts to Drive
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+        run: python upload_to_drive.py prompts_output prompts-package
