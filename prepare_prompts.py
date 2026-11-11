@@ -21,6 +21,8 @@ Canvas Viewport: {WIDTH}x{HEIGHT} pixels
 CRITICAL SCENE & SHOT RULES (AVOID STATIC SCENES):
 1. MULTIPLE SHOTS PER CLIP (MANDATORY):
    - A single static background for {duration}s is UNACCEPTABLE.
+   - NO HOST / MODERN PODCAST HEADS:
+   - Absolutely NO modern studios, podcast microphones, hosts, headphones, Focus 100% on historical events, terrain, armies, maps, and metaphors.
    - Divide this clip into at least 3 to 4 DISTINCT visual shots using grouped layers:
      * `<g id="shot-1">...</g>` (e.g., Establishing wide scenery)
      * `<g id="shot-2">...</g>` (e.g., Close-up character action)
