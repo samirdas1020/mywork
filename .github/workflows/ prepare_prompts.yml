@@ -24,7 +24,7 @@ jobs:
         env:
           DRIVE_URL: ${{ inputs.drive_url }}
         run: |
-          gdown --fuzzy "$DRIVE_URL" -O input_audio.mp3
+          gdown "$DRIVE_URL" -O input_audio.mp3
           ls -lh input_audio.mp3
       - name: Split Audio, Transcribe & Build Prompts
         env:
