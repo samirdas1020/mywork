@@ -5,7 +5,7 @@ import os
 import subprocess
 import sys
 
-FPS = 24  # চাইলে 30 দিতে পারেন আরও স্মুথ অ্যানিমেশনের জন্য
+FPS = 30  # চাইলে 30 দিতে পারেন আরও স্মুথ অ্যানিমেশনের জন্য
 WIDTH, HEIGHT = 1280, 720
 SCALE = 1.5  # 1280x720 ক্যানভাসকে সরাসরি 1920x1080 (Full HD) হিসেবে রেন্ডার করবে
 IN_DIR = "render_input"  # scene_N.html, audio_N.mp3, chunks.json
