@@ -33,13 +33,10 @@ jobs:
 
       - name: Download Audio from Drive
         env:
-          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
-          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
           AUDIO_INPUT: ${{ github.event.inputs.audio_drive_input }}
         run: |
-          if [ -f "download_from_drive.py" ]; then
-            python download_from_drive.py "$AUDIO_INPUT"
-          fi
+          pip install gdown
+          gdown "$AUDIO_INPUT" -O input_audio.mp3
 
       - name: Split Audio, Transcribe & Build 9:16 Shorts Prompts
         run: |
