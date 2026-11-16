@@ -3,130 +3,88 @@ name: Render Shorts Video (9:16 No API)
 on:
   workflow_dispatch:
     inputs:
-      drive_folder_name:
-        description: "Google Drive folder name containing scene_N.html, audio_N.mp3, chunks.json"
-        required: false
-        default: "shorts-prompts-package"
+      drive_zip:
+        description: 'Drive zip link (Anyone with the link)'
+        required: true
+        type: string
 
 jobs:
   plan:
     runs-on: ubuntu-latest
     outputs:
-      scenes: ${{ steps.find.outputs.scenes }}
+      matrix: ${{ steps.p.outputs.matrix }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-
+          python-version: '3.11'
       - name: Download inputs from Drive
         env:
-          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
-          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
-          FOLDER_NAME: ${{ github.event.inputs.drive_folder_name || 'shorts-prompts-package' }}
+          DRIVE_ZIP: ${{ inputs.drive_zip }}
         run: |
-          if [ -f "download_render_inputs.py" ]; then
-            python download_render_inputs.py "$FOLDER_NAME" render_input
-          elif [ -f "download_from_drive.py" ]; then
-            python download_from_drive.py "$FOLDER_NAME" render_input
-          fi
-
-      - name: Find scene files
-        id: find
+          pip install gdown
+          gdown "$DRIVE_ZIP" -O inputs.zip
+          unzip -o inputs.zip -d render_input
+          ls render_input
+      - id: p
+        name: Find scene files
         run: |
-          for f in render_input/scene-*.html; do
-            [ -e "$f" ] && mv "$f" "${f/scene-/scene_}"
-          done
           idx=$(ls render_input/scene_*.html | sed -E 's/.*scene_([0-9]+)\.html/\1/' | sort -n | jq -R . | jq -sc .)
           echo "Scenes found: $idx"
-          echo "scenes=$idx" >> $GITHUB_OUTPUT
-
-      - name: Upload render_input artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: shorts-render-input
-          path: render_input/
-          retention-days: 1
+          echo "matrix=$idx" >> $GITHUB_OUTPUT
 
   render:
     needs: plan
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        scene: ${{ fromJson(needs.plan.outputs.scenes) }}
+        chunk: ${{ fromJson(needs.plan.outputs.matrix) }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-
-      - name: Download render_input artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: shorts-render-input
-          path: render_input/
-
-      - name: Install FFmpeg & Playwright
+          python-version: '3.11'
+      - name: Download inputs from Drive
+        env:
+          DRIVE_ZIP: ${{ inputs.drive_zip }}
         run: |
-          sudo apt-get update -y
-          sudo apt-get install -y ffmpeg
+          pip install gdown
+          gdown "$DRIVE_ZIP" -O inputs.zip
+          unzip -o inputs.zip -d render_input
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
           pip install playwright
           playwright install --with-deps chromium
-
-      - name: Render 9:16 Chunk ${{ matrix.scene }}
-        run: |
-          python -u render_shorts_scenes.py ${{ matrix.scene }}
-
-      - name: Upload synced clip artifact
-        uses: actions/upload-artifact@v4
+          ffmpeg -version | head -1
+      - name: Render Shorts Chunk
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: python -u render_shorts_scenes.py render ${{ matrix.chunk }}
+      - uses: actions/upload-artifact@v4
         with:
-          name: shorts-clip-${{ matrix.scene }}
-          path: clips/synced_${{ matrix.scene }}.mp4
-          retention-days: 1
+          name: shorts-clip-${{ matrix.chunk }}
+          path: clips/synced_${{ matrix.chunk }}.mp4
 
   merge:
     needs: render
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
-          python-version: "3.11"
-
-      - name: Download render_input & all rendered clips
-        uses: actions/download-artifact@v4
-        with:
-          pattern: shorts-*
+          pattern: shorts-clip-*
           merge-multiple: true
-
-      - name: Organize files for merge
-        run: |
-          mkdir -p clips render_input
-          mv synced_*.mp4 clips/ 2>/dev/null || true
-          mv chunks.json render_input/ 2>/dev/null || true
-
-      - name: Install FFmpeg
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y ffmpeg
-
-      - name: Merge 9:16 Clips
-        run: |
-          python -u render_shorts_scenes.py merge
-
-      - name: Upload Final Shorts Video to Drive
+          path: clips
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Merge Clips
+        run: python render_shorts_scenes.py merge
+      - name: Upload Final Shorts to Drive
         env:
-          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
-          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
-        run: |
-          python upload_to_drive.py final_shorts.mp4 "${{ github.event.inputs.drive_folder_name || 'shorts-prompts-package' }}"
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+        run: python upload_to_drive.py final_shorts.mp4 final-shorts
