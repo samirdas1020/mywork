@@ -1,0 +1,53 @@
+name: Prepare Shorts Prompts (9:16)
+
+on:
+  workflow_dispatch:
+    inputs:
+      audio_drive_input:
+        description: "Google Drive file link or ID for input_audio.mp3 (optional if using default)"
+        required: false
+        default: ""
+      drive_folder_name:
+        description: "Google Drive folder name to upload prompts"
+        required: false
+        default: "shorts-prompts-package"
+
+jobs:
+  prepare-shorts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg
+          pip install --upgrade pip
+          pip install faster-whisper
+
+      - name: Download Audio from Drive
+        env:
+          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+          AUDIO_INPUT: ${{ github.event.inputs.audio_drive_input }}
+        run: |
+          if [ -f "download_from_drive.py" ]; then
+            python download_from_drive.py "$AUDIO_INPUT"
+          fi
+
+      - name: Split Audio, Transcribe & Build 9:16 Shorts Prompts
+        run: |
+          python -u prepare_shorts_prompts.py
+
+      - name: Upload Shorts Prompts to Drive
+        env:
+          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+          GDRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+        run: |
+          python upload_to_drive.py prompts_output "${{ github.event.inputs.drive_folder_name || 'shorts-prompts-package' }}"
