@@ -1,3 +1,4 @@
+from html.parser import HTMLParser
 import json
 import os
 import re
@@ -9,6 +10,9 @@ from scipy.signal import butter, lfilter
 SAMPLE_RATE = 44100
 
 
+# ==============================================================================
+# ১. অডিও ফিল্টার হেল্পার
+# ==============================================================================
 def butter_bandpass(lowcut, highcut, fs, order=3):
     nyq = 0.5 * fs
     low = max(0.001, min(lowcut / nyq, 0.99))
@@ -47,6 +51,9 @@ def normalize_and_fade(wave, volume=0.6, fade_in=0.015, fade_out=0.04):
     return wave * volume
 
 
+# ==============================================================================
+# ২. রিয়েলিস্টিক ফোলি ও SFX সিন্থেসাইজার
+# ==============================================================================
 def sfx_dramatic_hit(duration_sec=1.3, volume=0.85):
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
@@ -226,122 +233,196 @@ def compose_dynamic_bgm(duration_sec, mood="suspense", volume=0.22):
     return normalize_and_fade(smooth_bgm, volume=volume, fade_in=0.5, fade_out=0.7)
 
 
-def detect_sound_for_english_context(text_and_code, is_shot_start=False):
-    s = text_and_code.lower()
+# ==============================================================================
+# ৩. ডেডিকেটেড HTML DOM & JS পার্সার (পুরো HTML ফাইল আলাদাভাবে রিড করে)
+# ==============================================================================
+class SceneHTMLInspector(HTMLParser):
+    """পুরো HTML ফাইল পার্স করে প্রতিটি এলিমেন্টের ID, Class, Inline Style ও ভেতরের টেক্সট বের করে"""
+    def __init__(self):
+        super().__init__()
+        self.elements = {}       # id -> {tag, classes, style, text}
+        self.delayed_items = []  # (delay_sec, semantic_desc)
+        self.current_id = None
+        self.in_script_or_style = False
 
-    if re.search(r"\b(crumble|destroy|destroyed|temple|ruin|ruins|collapse|collapsed|earthquake|blast|explode|shake|shatter|demolish|razed|debris)\b", s):
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style"):
+            self.in_script_or_style = True
+            return
+        attr_dict = dict(attrs)
+        el_id = attr_dict.get("id", "")
+        el_cls = attr_dict.get("class", "")
+        style = attr_dict.get("style", "")
+
+        if el_id:
+            self.current_id = el_id
+            self.elements[el_id] = {
+                "tag": tag,
+                "classes": el_cls,
+                "style": style,
+                "text": ""
+            }
+
+        # ইনলাইন CSS animation-delay / transition-delay চেক
+        m_delay = re.search(r"(?:animation-delay|transition-delay)\s*:\s*(\d+(?:\.\d+)?)(ms|s)", style, re.I)
+        if m_delay:
+            val = float(m_delay.group(1))
+            sec = val / 1000.0 if m_delay.group(2).lower() == "ms" else val
+            self.delayed_items.append((sec, f"{tag} {el_id} {el_cls}"))
+
+        # SVG <animate begin="..."> চেক
+        if tag in ("animate", "animatetransform", "animatemotion", "set"):
+            begin_val = attr_dict.get("begin", "")
+            m_beg = re.search(r"(\d+(?:\.\d+)?)(ms|s)", begin_val, re.I)
+            if m_beg:
+                val = float(m_beg.group(1))
+                sec = val / 1000.0 if m_beg.group(2).lower() == "ms" else val
+                self.delayed_items.append((sec, f"svg_anim {el_id} {el_cls}"))
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style"):
+            self.in_script_or_style = False
+        if self.current_id and self.elements.get(self.current_id, {}).get("tag") == tag:
+            self.current_id = None
+
+    def handle_data(self, data):
+        if not self.in_script_or_style and self.current_id:
+            clean = data.strip()
+            if clean:
+                self.elements[self.current_id]["text"] += " " + clean
+
+
+def map_semantic_to_sound(semantic_text, is_shot_start=False):
+    s = semantic_text.lower()
+    if re.search(r"(crumble|destroy|destroyed|temple|ruin|ruins|collapse|collapsed|earthquake|blast|explode|shake|shatter|demolish|razed|debris|fall)", s):
         return "crumble"
-    if re.search(r"\b(war|sword|swords|army|armies|battle|soldier|soldiers|emperor|roman|romans|shield|knife|clash|attack|fight|siege|legion|conquer|blood)\b", s):
+    if re.search(r"(war|sword|swords|army|armies|battle|soldier|soldiers|emperor|roman|romans|shield|knife|clash|attack|fight|siege|legion|conquer|blood)", s):
         return "sword"
-    if re.search(r"\b(dig|dug|shovel|pickaxe|excavate|excavation|bury|buried|dirt|hill|soil|earth|mound|tunnel|stone|build|built)\b", s):
+    if re.search(r"(dig|dug|shovel|pickaxe|excavate|excavation|bury|buried|dirt|hill|soil|earth|mound|tunnel|stone|build|built|construct)", s):
         return "dig"
-    if re.search(r"\b(fire|torch|flame|flames|burn|burned|burning|ash|ashes|smoke)\b|#ef4444|#f97316|#dc2626", s):
+    if re.search(r"(fire|torch|flame|flames|burn|burned|burning|ash|ashes|smoke|#ef4444|#f97316|#dc2626)", s):
         return "fire"
-    if re.search(r"\b(thunder|lightning|storm|sky|cloud|flash)\b", s):
+    if re.search(r"(thunder|lightning|storm|flash)", s):
         return "thunder"
-    if re.search(r"\b(ocean|sea|river|water|wave|waves|rain|flood|boat|ship)\b", s):
+    if re.search(r"(ocean|sea|river|water|wave|waves|rain|flood|boat|ship)", s):
         return "water"
-    if re.search(r"\b(map|pin|route|scroll|jerusalem|book|page|document|letter|draw|path|line|location|city)\b", s):
+    if re.search(r"(map|pin|route|scroll|jerusalem|book|page|document|letter|draw|path|line|location|city)", s):
         return "paper"
-    if re.search(r"\b(clock|dial|century|centuries|year|years|timer|decade|decades|era|age|time)\b", s):
+    if re.search(r"(clock|dial|century|centuries|year|years|timer|decade|decades|era|age|time)", s):
         return "tick"
-    if re.search(r"\b(secret|mystery|hidden|unknown|clue|discover|discovered|treasure|tomb|church|holy|cross|truth|never|until)\b", s):
+    if re.search(r"(secret|mystery|hidden|unknown|clue|discover|discovered|treasure|tomb|church|holy|cross|truth|never|until)", s):
         return "riser"
-
     return "hit" if is_shot_start else "pop"
 
 
-def build_timeline_from_html_and_script(html_path, chunk_idx, total_dur_sec):
+def parse_full_html_timeline(html_path, chunk_idx, total_dur_sec):
+    """পুরো HTML ফাইল আলাদাভাবে রিড করে DOM ম্যাপ + JS টাইমলাইন থেকে আসল ইভেন্ট বের করে"""
     events = []
     ambiences = []
 
-    html_code = ""
-    if os.path.exists(html_path):
-        with open(html_path, "r", encoding="utf-8") as f:
-            html_code = f.read()
+    if not os.path.exists(html_path):
+        return events, ambiences, "suspense"
 
-    clean_html = re.sub(r"<head>.*?</head>", "", html_code, flags=re.S | re.I)
-    clean_html = re.sub(r"<style[^>]*>.*?</style>", "", clean_html, flags=re.S | re.I)
+    with open(html_path, "r", encoding="utf-8") as f:
+        html_code = f.read()
 
-    narration_text = ""
-    chunks_json = os.path.join(os.path.dirname(html_path), "chunks.json")
-    if os.path.exists(chunks_json):
-        try:
-            with open(chunks_json, "r", encoding="utf-8") as f:
-                for c in json.load(f):
-                    if int(c.get("index", -1)) == int(chunk_idx):
-                        narration_text = c.get("text", "")
-                        break
-        except Exception:
-            pass
+    # ধাপ ১: পুরো HTML DOM পার্স করে প্রতিটি এলিমেন্ট ID-র আসল অর্থ বের করা
+    inspector = SceneHTMLInspector()
+    inspector.feed(html_code)
 
-    full_text = (clean_html + " " + narration_text).lower()
-    mood = "action" if re.search(r"\b(war|battle|attack|destroy|siege|army|fight|blood)\b", full_text) else "suspense"
+    # CSS ক্লাসের delay-গুলোও রিড করা
+    css_delays = {}
+    style_blocks = re.findall(r"<style[^>]*>(.*?)</style>", html_code, flags=re.S | re.I)
+    for css in style_blocks:
+        for m in re.finditer(r"([.#][\w-]+)\s*\{[^}]*?(?:animation-delay|transition-delay)\s*:\s*(\d+(?:\.\d+)?)(ms|s)", css, re.S | re.I):
+            sel = m.group(1).lstrip(".#")
+            val = float(m.group(2))
+            sec = val / 1000.0 if m.group(3).lower() == "ms" else val
+            css_delays[sel] = sec
 
-    shot_cuts = [0.0]
-    for m in re.finditer(r"t_ms\s*<\s*(\d+)", clean_html):
-        sec = int(m.group(1)) / 1000.0
-        if 0.6 < sec < total_dur_sec - 0.3:
-            shot_cuts.append(sec)
-    shot_cuts = sorted(list(set(shot_cuts)))
-    shot_cuts.append(total_dur_sec)
+    # এলিমেন্ট ID/Class অনুযায়ী ডিলেড ইভেন্ট যোগ করা
+    for el_id, info in inspector.elements.items():
+        semantic = f"{el_id} {info['classes']} {info['text']}"
+        if el_id in css_delays and 0.15 < css_delays[el_id] < total_dur_sec - 0.2:
+            events.append((css_delays[el_id], map_semantic_to_sound(semantic)))
+        for cls in info["classes"].split():
+            if cls in css_delays and 0.15 < css_delays[cls] < total_dur_sec - 0.2:
+                events.append((css_delays[cls], map_semantic_to_sound(semantic)))
 
-    shot_blocks = re.split(r"if\s*\(\s*activeShot\s*===\s*\d+\s*\)", clean_html)
+    for delay_sec, desc in inspector.delayed_items:
+        if 0.15 < delay_sec < total_dur_sec - 0.2:
+            events.append((delay_sec, map_semantic_to_sound(desc)))
 
-    for idx in range(len(shot_cuts) - 1):
-        s_start = shot_cuts[idx]
-        s_end = shot_cuts[idx + 1]
-        s_dur = max(0.4, s_end - s_start)
-        block = shot_blocks[idx + 1] if (idx + 1) < len(shot_blocks) else clean_html
+    # ধাপ ২: <script> ব্লক আলাদা করে রিড করা (updateSceneTime ও সব টাইম ট্রিগার)
+    scripts = "\n".join(re.findall(r"<script[^>]*>(.*?)</script>", html_code, flags=re.S | re.I))
 
-        if idx > 0 and s_dur >= 1.5:
+    # জাভাস্ক্রিপ্টে যেসব ভেরিয়েবলে document.getElementById('xyz') রাখা হয়েছে তা ম্যাপ করা
+    var_to_semantic = {}
+    for m in re.finditer(r"(?:const|let|var)\s+(\w+)\s*=\s*document\.(?:getElementById|querySelector)\(['\"][.#]?([\w-]+)['\"]\)", scripts):
+        var_name, target_id = m.group(1), m.group(2)
+        el_info = inspector.elements.get(target_id, {})
+        var_to_semantic[var_name] = f"{target_id} {el_info.get('classes', '')} {el_info.get('text', '')}"
+
+    # শট কাট বা টাইম রেঞ্জ বের করা (যেমন t < 4000, t_ms < 8500, scene === 1 ইত্যাদি)
+    time_points = [0.0]
+    for m in re.finditer(r"\b(?:t_ms|t|time|elapsed|ms)\s*(?:<|<=|>|>=|===|==)\s*(\d+(?:\.\d+)?)", scripts):
+        val = float(m.group(1))
+        sec = (val / 1000.0) if val > 60 else val
+        if 0.3 < sec < total_dur_sec - 0.2:
+            time_points.append(sec)
+            # ওই টাইম কন্ডিশনের পরের কোড ব্লকে কোন ভেরিয়েবল বা এলিমেন্ট নিয়ন্ত্রণ হচ্ছে তা রিড করা
+            block_snippet = scripts[m.end():m.end() + 400]
+            resolved_context = block_snippet
+            for v_name, sem in var_to_semantic.items():
+                if re.search(rf"\b{re.escape(v_name)}\b", block_snippet):
+                    resolved_context += " " + sem
+            for el_id, info in inspector.elements.items():
+                if el_id in block_snippet:
+                    resolved_context += f" {el_id} {info['classes']} {info['text']}"
+
+            snd = map_semantic_to_sound(resolved_context, is_shot_start=False)
+            events.append((sec, snd))
+
+    # শট অনুযায়ী অ্যাম্বিয়েন্স লেয়ার নির্ধারণ
+    time_points = sorted(list(set(time_points)))
+    time_points.append(total_dur_sec)
+
+    body_text = " ".join([v["text"] + " " + v["classes"] + " " + k for k, v in inspector.elements.items()])
+    full_context = (body_text + " " + scripts).lower()
+    mood = "action" if re.search(r"\b(war|battle|attack|destroy|siege|army|fight|blood)\b", full_context) else "suspense"
+
+    for idx in range(len(time_points) - 1):
+        s_start = time_points[idx]
+        s_end = time_points[idx + 1]
+        if idx == 0:
+            events.append((0.1, map_semantic_to_sound(full_context[:500], is_shot_start=True)))
+        elif (s_end - s_start) >= 2.0:
             events.append((max(0.0, s_start - 0.1), "swoosh"))
 
-        snd = detect_sound_for_english_context(block, is_shot_start=True)
-        events.append((s_start + 0.1, snd))
-
-        if re.search(r"\b(fire|torch|flame|burn)\b", block, re.I):
+        if re.search(r"\b(fire|torch|flame|burn)\b", full_context):
             ambiences.append((s_start, s_end, "fire"))
-        elif re.search(r"\b(water|sea|river|rain)\b", block, re.I):
+        elif re.search(r"\b(water|sea|river|rain)\b", full_context):
             ambiences.append((s_start, s_end, "water"))
-        elif re.search(r"\b(crowd|city|people|street|kingdom)\b", block, re.I):
+        elif re.search(r"\b(crowd|city|people|street|kingdom)\b", full_context):
             ambiences.append((s_start, s_end, "crowd"))
         else:
             ambiences.append((s_start, s_end, "wind"))
 
-    # JS micro-events
-    for m in re.finditer(r"\b(t_ms|t|time|elapsed)\s*(?:>=|>|===|==)\s*(\d+(?:\.\d+)?)", clean_html):
-        var_name = m.group(1)
-        val = float(m.group(2))
-        sec = (val / 1000.0) if (var_name == "t_ms" or val > 60) else val
-        if 0.2 < sec < total_dur_sec - 0.2:
-            snippet = clean_html[m.end():m.end() + 300]
-            snd = detect_sound_for_english_context(snippet, is_shot_start=False)
-            events.append((sec, snd))
-
-    # English narration sentence-by-sentence sync
-    if narration_text.strip():
-        sentences = [seg.strip() for seg in re.split(r"[.!?,;\n]+", narration_text) if len(seg.strip()) > 3]
-        if sentences:
-            step = total_dur_sec / len(sentences)
-            for i, sent in enumerate(sentences):
-                t_sent = i * step + 0.15
-                if t_sent < total_dur_sec - 0.3:
-                    snd = detect_sound_for_english_context(sent, is_shot_start=False)
-                    if snd != "pop" or (i % 2 == 0):
-                        events.append((t_sent, snd))
-
+    # ডুপ্লিকেট ফিল্টারিং
     events.sort(key=lambda x: x[0])
     final_events = []
     last_t = -999.0
     for t_sec, snd in events:
-        if (t_sec - last_t) >= 0.45:
+        if (t_sec - last_t) >= 0.40:
             final_events.append((t_sec, snd))
             last_t = t_sec
 
     return final_events, ambiences, mood
 
 
+# ==============================================================================
+# ৪. মাল্টি-লেয়ার অডিও মিক্সার
+# ==============================================================================
 def mix_segment(target_track, wave, start_sec):
     start_idx = int(start_sec * SAMPLE_RATE)
     if start_idx >= len(target_track) or start_idx < 0:
@@ -368,7 +449,7 @@ def build_clip_audio(html_path, voice_mp3_path, output_wav_path):
     voice = voice_data.astype(np.float32) / 32768.0
     total_dur = len(voice) / SAMPLE_RATE
 
-    events, ambiences, mood = build_timeline_from_html_and_script(html_path, chunk_idx, total_dur)
+    events, ambiences, mood = parse_full_html_timeline(html_path, chunk_idx, total_dur)
 
     bgm = compose_dynamic_bgm(total_dur, mood=mood, volume=0.22)
     voice_env = np.convolve(np.abs(voice), np.ones(int(SAMPLE_RATE * 0.25)) / (SAMPLE_RATE * 0.25), mode='same')
@@ -407,4 +488,4 @@ def build_clip_audio(html_path, voice_mp3_path, output_wav_path):
     wavfile.write(output_wav_path, SAMPLE_RATE, final_int16)
 
     summary = ", ".join([f"{round(t,1)}s:{s}" for t, s in events[:12]])
-    print(f"Generated scene audio [{mood}]: {output_wav_path} | Events({len(events)}): [{summary}]", flush=True)
+    print(f"Parsed HTML & generated audio [{mood}]: {output_wav_path} | Events({len(events)}): [{summary}]", flush=True)
