@@ -51,10 +51,9 @@ def normalize_and_fade(wave, volume=0.5, fade_in=0.02, fade_out=0.05):
 
 
 # ==============================================================================
-# ২. ইউনিভার্সাল প্যারামেট্রিক সাউন্ড সিন্থেসিস কোর (৪টি মৌলিক ফিজিক্স ইঞ্জিন)
+# ২. ইউনিভার্সাল প্যারামেট্রিক সাউন্ড সিন্থেসিস কোর
 # ==============================================================================
 def engine_impact(freq_start, freq_end, decay, noise_mix=0.3, distortion=1.5, duration_sec=1.2, volume=0.7):
-    """বিস্ফোরণ, গুলি, বজ্রপাত, ভূমিকম্প বা নাটকীয় ধাক্কার ফিজিক্স ইঞ্জিন"""
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
     freq = freq_end + (freq_start - freq_end) * np.exp(-t * (decay * 2.5))
@@ -70,18 +69,15 @@ def engine_impact(freq_start, freq_end, decay, noise_mix=0.3, distortion=1.5, du
 
 
 def engine_texture(low_hz, high_hz, duration_sec, mod_freq=0.5, crackle_rate=0.0, volume=0.25):
-    """বৃষ্টি, বাতাস, আগুন, সমুদ্রের ঢেউ, ভিড় বা কাগজের টেক্সচার ইঞ্জিন"""
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
     noise = np.random.normal(0, 1, n)
     b, a = butter_bandpass(low_hz, high_hz, SAMPLE_RATE, order=2)
     filtered = lfilter(b, a, noise)
 
-    # প্রাকৃতিক ওঠানামা (Wave / Wind modulation)
     mod = 0.65 + 0.35 * np.sin(2 * np.pi * mod_freq * t + np.random.uniform(0, 6.28))
     out = filtered * mod
 
-    # ফোঁটা বা স্ফুলিঙ্গ (Raindrops / Fire sparks / Debris)
     if crackle_rate > 0:
         sparks = (np.random.rand(n) > (1.0 - crackle_rate)).astype(np.float32) * np.random.normal(0, 3.0, n)
         b_hi, a_hi = butter_bandpass(1500, 6000, SAMPLE_RATE, order=2)
@@ -91,7 +87,6 @@ def engine_texture(low_hz, high_hz, duration_sec, mod_freq=0.5, crackle_rate=0.0
 
 
 def engine_resonance(freqs, decay, scrape_mix=0.2, duration_sec=0.8, volume=0.5):
-    """তলোয়ার, ধাতু, ঘড়ি, কাঁচ বা ম্যাজিক্যাল শিমারের রেজোন্যান্স ইঞ্জিন"""
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
     tone = np.zeros(n)
@@ -107,7 +102,6 @@ def engine_resonance(freqs, decay, scrape_mix=0.2, duration_sec=0.8, volume=0.5)
 
 
 def engine_motion(f_low, f_high, duration_sec=0.35, speed_curve=1.0, volume=0.3):
-    """গাড়ি, তীর, ক্যামেরা জুম বা ট্রানজিশন গতির ইঞ্জিন"""
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
     noise = np.random.normal(0, 1, n)
@@ -118,12 +112,11 @@ def engine_motion(f_low, f_high, duration_sec=0.35, speed_curve=1.0, volume=0.3)
 
 
 # ==============================================================================
-# ৩. ডাইনামিক ফোলি লাইব্রেরি (প্যারামেট্রিক ইঞ্জিন দিয়ে অন-দ্য-ফ্লাই তৈরি)
+# ৩. ডাইনামিক ফোলি ও অ্যাম্বিয়েন্স জেনারেটর
 # ==============================================================================
 def generate_dynamic_sfx(action_type, dur=1.0):
     if action_type == "thunder":
-        rumble = engine_impact(95, 24, decay=1.1, noise_mix=0.65, distortion=2.2, duration_sec=2.4, volume=0.75)
-        return rumble
+        return engine_impact(95, 24, decay=1.1, noise_mix=0.65, distortion=2.2, duration_sec=2.4, volume=0.75)
     elif action_type == "gunshot":
         return engine_impact(420, 35, decay=14.0, noise_mix=0.75, distortion=3.5, duration_sec=0.55, volume=0.78)
     elif action_type == "boom":
@@ -131,8 +124,7 @@ def generate_dynamic_sfx(action_type, dur=1.0):
     elif action_type == "crumble":
         return engine_texture(90, 950, duration_sec=1.8, mod_freq=2.2, crackle_rate=0.004, volume=0.60)
     elif action_type == "dig":
-        thud = engine_impact(130, 42, decay=16.0, noise_mix=0.55, distortion=1.8, duration_sec=0.35, volume=0.55)
-        return thud
+        return engine_impact(130, 42, decay=16.0, noise_mix=0.55, distortion=1.8, duration_sec=0.35, volume=0.55)
     elif action_type == "sword":
         return engine_resonance([1480, 2240, 3410, 4920], decay=5.5, scrape_mix=0.45, duration_sec=0.75, volume=0.52)
     elif action_type == "chime":
@@ -144,7 +136,7 @@ def generate_dynamic_sfx(action_type, dur=1.0):
     elif action_type == "paper":
         return engine_texture(1400, 5200, duration_sec=0.65, mod_freq=9.0, crackle_rate=0.002, volume=0.40)
     elif action_type == "vehicle":
-        return engine_motion(90, 480, duration_sec=min(2.5, dur), speed_curve=1.2, volume=0.42)
+        return engine_motion(90, 480, duration_sec=min(2.5, max(0.5, dur)), speed_curve=1.2, volume=0.42)
     else:  # subtle swoosh
         return engine_motion(280, 1050, duration_sec=0.32, speed_curve=2.0, volume=0.25)
 
@@ -160,33 +152,32 @@ def generate_dynamic_ambience(amb_type, dur):
         return engine_texture(260, 1100, duration_sec=dur, mod_freq=0.8, crackle_rate=0.0005, volume=0.15)
     elif amb_type == "space":
         return engine_texture(60, 240, duration_sec=dur, mod_freq=0.12, crackle_rate=0.0, volume=0.16)
-    else:  # natural air/wind
+    else:
         return engine_texture(160, 620, duration_sec=dur, mod_freq=0.3, crackle_rate=0.0, volume=0.12)
 
 
 # ==============================================================================
-# ৪. মুড-ভিত্তিক ডাইনামিক মিউজিক কম্পোজার (Dynamic Mood BGM)
+# ৪. মুড-ভিত্তিক ডাইনামিক মিউজিক কম্পোজার
 # ==============================================================================
 def compose_dynamic_bgm(duration_sec, mood="suspense", volume=0.18):
-    """ভিডিওর মুড (suspense, action, emotional, mystery) অনুযায়ী কর্ড ও বিট তৈরি করে"""
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
 
     mood_profiles = {
         "action": {
-            "roots": [82.41, 65.41, 73.42, 61.74],   # E2, C2, D2, B1
+            "roots": [82.41, 65.41, 73.42, 61.74],
             "third": 1.189, "pulse_hz": 0.25, "tempo_decay": 14.0, "cutoff": 1600
         },
         "emotional": {
-            "roots": [65.41, 49.00, 55.00, 43.65],   # C2, G1, A1, F1
+            "roots": [65.41, 49.00, 55.00, 43.65],
             "third": 1.260, "pulse_hz": 1.0, "tempo_decay": 5.0, "cutoff": 900
         },
         "mystery": {
-            "roots": [61.74, 65.41, 58.27, 55.00],   # B1, C2, Bb1, A1
+            "roots": [61.74, 65.41, 58.27, 55.00],
             "third": 1.189, "pulse_hz": 0.75, "tempo_decay": 8.0, "cutoff": 1050
         },
         "suspense": {
-            "roots": [73.42, 58.27, 49.00, 55.00],   # D2, Bb1, G1, A1
+            "roots": [73.42, 58.27, 49.00, 55.00],
             "third": 1.189, "pulse_hz": 0.5, "tempo_decay": 11.0, "cutoff": 1250
         }
     }
@@ -225,10 +216,35 @@ def compose_dynamic_bgm(duration_sec, mood="suspense", volume=0.18):
 
 
 # ==============================================================================
-# ৫. ভিজ্যুয়াল, কালার, মোশন ও স্ক্রিপ্ট বিশ্লেষক (Universal Context Analyzer)
+# ৫. মাইক্রো-ইভেন্ট স্ক্যানার (HTML-এর প্রতিটি ইভেন্ট ও অ্যানিমেশন ডিটেক্টর)
 # ==============================================================================
+def classify_action_from_snippet(snippet, default_sfx="pop"):
+    s = snippet.lower()
+    if re.search(r"(thunder|lightning|storm|flash)", s):
+        return "thunder", 2.4
+    if re.search(r"(gun|shoot|bullet|rifle|pistol|sniper)", s):
+        return "gunshot", 0.55
+    if re.search(r"(crumble|destroy|temple|ruin|collapse|fall|earthquake|blast|explode|shake)", s):
+        return "crumble", 1.8
+    if re.search(r"(dig|shovel|pickaxe|earth|excavat|bury|dirt)", s):
+        return "dig", 0.35
+    if re.search(r"(war|sword|army|battle|soldier|emperor|roman|shield|knife|clash)", s):
+        return "sword", 0.75
+    if re.search(r"(car|train|plane|rocket|engine|drive|speed|ship|move|slide)", s):
+        return "vehicle", 1.2
+    if re.search(r"(map|pin|route|path|scroll|jerusalem|location|arrow|book|page|line|draw)", s):
+        return "paper", 0.65
+    if re.search(r"(clock|dial|century|centuries|year|time|timer)", s):
+        return "tick", 0.07
+    if re.search(r"(discover|treasure|gold|church|holy|cross|tomb|light|glow|star|badge|title|hero)", s):
+        return "chime", 1.2
+    if re.search(r"(impact|boom|slam|drop|heavy|king|empire)", s):
+        return "boom", 1.5
+    return default_sfx, 0.15
+
+
 def analyze_clip_context(html_path, chunk_idx, total_dur_sec):
-    events = []
+    raw_events = []  # (time_sec, sfx_name, dur)
     ambiences = []
     html_code = ""
     if os.path.exists(html_path):
@@ -249,7 +265,7 @@ def analyze_clip_context(html_path, chunk_idx, total_dur_sec):
 
     full_context = (html_code + " " + narration_text).lower()
 
-    # পুরো ক্লিপের মিউজিক মুড নির্ধারণ
+    # ১. পুরো ক্লিপের মিউজিক মুড
     if re.search(r"(war|battle|attack|gun|shoot|chase|fast|explode|danger|fight)", full_context):
         mood = "action"
     elif re.search(r"(sad|cry|death|pray|holy|hope|love|tear|peace|god)", full_context):
@@ -259,11 +275,11 @@ def analyze_clip_context(html_path, chunk_idx, total_dur_sec):
     else:
         mood = "suspense"
 
-    # শটগুলোর টাইমলাইন বের করা
+    # ২. শট কাট টাইমলাইন ও অ্যাম্বিয়েন্স
     shot_cuts = [0.0]
     for m in re.finditer(r"t_ms\s*<\s*(\d+)", html_code):
         sec = int(m.group(1)) / 1000.0
-        if 0.8 < sec < total_dur_sec - 0.5:
+        if 0.6 < sec < total_dur_sec - 0.3:
             shot_cuts.append(sec)
     shot_cuts = sorted(list(set(shot_cuts)))
     shot_cuts.append(total_dur_sec)
@@ -273,41 +289,16 @@ def analyze_clip_context(html_path, chunk_idx, total_dur_sec):
     for idx in range(len(shot_cuts) - 1):
         s_start = shot_cuts[idx]
         s_end = shot_cuts[idx + 1]
-        s_dur = max(0.5, s_end - s_start)
+        s_dur = max(0.4, s_end - s_start)
         block = (shot_blocks[idx + 1] if (idx + 1) < len(shot_blocks) else html_code).lower()
 
-        if idx > 0 and s_dur >= 2.2:
-            events.append((max(0.0, s_start - 0.12), "swoosh", 0.35))
+        # শট শুরুর প্রধান ইভেন্ট
+        if idx > 0 and s_dur >= 1.8:
+            raw_events.append((max(0.0, s_start - 0.1), "swoosh", 0.32))
+        sfx_name, dur = classify_action_from_snippet(block[:600], default_sfx="pop")
+        raw_events.append((s_start + 0.12, sfx_name, dur))
 
-        # ফিজিক্স ও অ্যাকশন ডিটেকশন (টেক্সট + ভিজ্যুয়াল প্যাটার্ন)
-        if re.search(r"(thunder|lightning|storm|flash)", block):
-            events.append((s_start + 0.1, "thunder", 2.4))
-        elif re.search(r"(gun|shoot|bullet|rifle|pistol|sniper)", block):
-            for t_g in np.arange(s_start + 0.2, min(s_end - 0.2, s_start + 2.5), 0.45):
-                events.append((float(t_g), "gunshot", 0.55))
-        elif re.search(r"(crumble|destroy|temple|ruin|collapse|fall|earthquake|blast|explode)", block):
-            events.append((s_start + 0.12, "boom", 1.5))
-            events.append((s_start + 0.30, "crumble", 1.8))
-        elif re.search(r"(dig|shovel|pickaxe|earth|excavat|bury|hill|dirt)", block):
-            for t_d in np.arange(s_start + 0.3, s_end - 0.3, 0.85):
-                events.append((float(t_d), "dig", 0.35))
-        elif re.search(r"(war|sword|army|battle|soldier|emperor|roman|shield|knife)", block):
-            events.append((s_start + 0.2, "sword", 0.75))
-            events.append((s_start + 0.25, "boom", 1.5))
-        elif re.search(r"(car|train|plane|rocket|engine|drive|speed|ship)", block):
-            events.append((s_start + 0.15, "vehicle", s_dur))
-        elif re.search(r"(map|pin|route|path|scroll|jerusalem|location|arrow|book|page)", block):
-            events.append((s_start + 0.15, "paper", 0.65))
-            events.append((s_start + s_dur * 0.45, "pop", 0.12))
-        elif re.search(r"(clock|dial|century|centuries|year|time|timer)", block):
-            for t_tk in np.arange(s_start + 0.25, s_end - 0.25, 0.5):
-                events.append((float(t_tk), "tick", 0.07))
-        elif re.search(r"(discover|treasure|gold|church|holy|cross|tomb|light|glow|star)", block):
-            events.append((s_start + 0.25, "chime", 1.2))
-        else:
-            events.append((s_start + 0.15, "pop", 0.12))
-
-        # অ্যাম্বিয়েন্স লেয়ার (রঙ ও পরিবেশ বিশ্লেষণসহ)
+        # শট জুড়ে অ্যাম্বিয়েন্স
         if re.search(r"(rain|storm|drop|wet|monsoon)", block):
             ambiences.append((s_start, s_end, "rain"))
         elif re.search(r"(ocean|sea|river|water|wave|underwater|boat)", block):
@@ -321,7 +312,48 @@ def analyze_clip_context(html_path, chunk_idx, total_dur_sec):
         else:
             ambiences.append((s_start, s_end, "wind"))
 
-    return events, ambiences, mood
+    # ৩. HTML-এর ভেতরের প্রতিটি মাইক্রো-ইভেন্ট স্ক্যান করা (JS ট্রিগার, CSS ডিলে, SVG begin)
+    # (ক) জাভাস্ক্রিপ্ট টাইম কন্ডিশন: যেমন t_ms > 2500, t_ms >= 4200, t > 3.5
+    for m in re.finditer(r"\b(t_ms|t|time|elapsed)\s*(?:>=|>|===|==)\s*(\d+(?:\.\d+)?)", html_code):
+        var_name = m.group(1)
+        val = float(m.group(2))
+        sec = (val / 1000.0) if (var_name == "t_ms" or val > 60) else val
+        if 0.2 < sec < total_dur_sec - 0.2:
+            context_window = html_code[m.end():m.end() + 350]
+            sfx_name, dur = classify_action_from_snippet(context_window, default_sfx="pop")
+            raw_events.append((sec, sfx_name, dur))
+
+    # (খ) CSS animation-delay এবং transition-delay স্ক্যান
+    for m in re.finditer(r"(?:animation-delay|transition-delay)\s*:\s*(\d+(?:\.\d+)?)(ms|s)", html_code, re.I):
+        val = float(m.group(1))
+        unit = m.group(2).lower()
+        sec = (val / 1000.0) if unit == "ms" else val
+        if 0.2 < sec < total_dur_sec - 0.2:
+            context_window = html_code[max(0, m.start() - 250):m.end() + 150]
+            sfx_name, dur = classify_action_from_snippet(context_window, default_sfx="pop")
+            raw_events.append((sec, sfx_name, dur))
+
+    # (গ) SVG <animate ... begin="2.5s"> স্ক্যান
+    for m in re.finditer(r"<animate[^>]*\bbegin\s*=\s*['\"](\d+(?:\.\d+)?)(ms|s)['\"][^>]*>", html_code, re.I):
+        val = float(m.group(1))
+        unit = m.group(2).lower()
+        sec = (val / 1000.0) if unit == "ms" else val
+        if 0.2 < sec < total_dur_sec - 0.2:
+            context_window = html_code[max(0, m.start() - 200):m.end() + 200]
+            sfx_name, dur = classify_action_from_snippet(context_window, default_sfx="paper")
+            raw_events.append((sec, sfx_name, dur))
+
+    # (ঘ) ডুপ্লিকেট বা ০.২৫ সেকেন্ডের ভেতরে ওভারল্যাপ হওয়া সাউন্ড ফিল্টার করা যাতে জগাখিচুড়ি না হয়
+    raw_events.sort(key=lambda x: x[0])
+    filtered_events = []
+    last_time_by_type = {}
+    for t_sec, sfx_name, dur in raw_events:
+        last_t = last_time_by_type.get(sfx_name, -999.0)
+        if (t_sec - last_t) >= 0.35:
+            filtered_events.append((t_sec, sfx_name, dur))
+            last_time_by_type[sfx_name] = t_sec
+
+    return filtered_events, ambiences, mood
 
 
 # ==============================================================================
@@ -378,4 +410,4 @@ def build_clip_audio(html_path, voice_mp3_path, output_wav_path):
 
     final_int16 = np.int16(np.clip(mixed, -1.0, 1.0) * 32767)
     wavfile.write(output_wav_path, SAMPLE_RATE, final_int16)
-    print(f"Generated universal dynamic audio [{mood}]: {output_wav_path} ({len(events)} SFX cues, {len(ambiences)} ambiences)", flush=True)
+    print(f"Generated micro-event dynamic audio [{mood}]: {output_wav_path} ({len(events)} synced events, {len(ambiences)} ambiences)", flush=True)
