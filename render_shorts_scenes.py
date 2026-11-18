@@ -5,13 +5,12 @@ import os
 import subprocess
 import sys
 
-FPS = 30  # শর্টসের জন্য 30 FPS স্মুথ হবে
+FPS = 30
 WIDTH, HEIGHT = 720, 1280
-SCALE = 1.5  # 720x1280 ক্যানভাসকে সরাসরি 1080x1920 (Full HD Vertical) হিসেবে রেন্ডার করবে
-IN_DIR = "render_input"  # scene_N.html, audio_N.mp3, chunks.json
+SCALE = 1.5
+IN_DIR = "render_input"
 OUT_DIR = "clips"
 
-# Freeze every kind of animation at time t, then let the page draw that moment.
 STEP_JS = """t => {
   document.getAnimations().forEach(a => {
     try { a.pause(); a.currentTime = t; } catch (e) {}
@@ -22,7 +21,6 @@ STEP_JS = """t => {
   if (window.updateSceneTime) window.updateSceneTime(t);
 }"""
 
-# Stop the page's own real-time loops so they cannot overwrite our frame.
 INIT_JS = """
 window.requestAnimationFrame = () => 0;
 window.setInterval = () => 0;
@@ -40,7 +38,6 @@ def render(i):
   duration = float(meta[i]["duration"])
   frames = max(1, round(duration * FPS))
 
-  # যদি এআই scene-0.html নামে ফাইল দেয় তবে অটোমেটিক scene_0.html করে নেবে
   hyphen_scene = os.path.abspath(f"{IN_DIR}/scene-{i}.html")
   scene = os.path.abspath(f"{IN_DIR}/scene_{i}.html")
   if os.path.exists(hyphen_scene) and not os.path.exists(scene):
@@ -49,6 +46,7 @@ def render(i):
   audio = f"{IN_DIR}/audio_{i}.mp3"
   os.makedirs(OUT_DIR, exist_ok=True)
   video = f"{OUT_DIR}/video_{i}.mp4"
+  mixed_audio = f"{OUT_DIR}/mixed_audio_{i}.wav"
   final = f"{OUT_DIR}/synced_{i}.mp4"
 
   print(
@@ -116,10 +114,9 @@ def render(i):
     print("Page JS errors:", errors[:3], flush=True)
   if len(seen) <= 1:
     print("WARNING: frames look static, check the HTML.", flush=True)
-  if os.path.exists(audio):
-    mixed_audio = f"{OUT_DIR}/mixed_audio_{i}.wav"
-    build_clip_audio(scene, audio, mixed_audio)
 
+  if os.path.exists(audio):
+    build_clip_audio(scene, audio, mixed_audio)
     subprocess.run(
         [
             "ffmpeg",
@@ -149,6 +146,7 @@ def render(i):
   else:
     os.replace(video, final)
   print(f"Saved {final}", flush=True)
+
 
 def merge():
   files = glob.glob(f"{OUT_DIR}/synced_*.mp4")
