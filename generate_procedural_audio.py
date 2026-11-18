@@ -9,9 +9,6 @@ from scipy.signal import butter, lfilter
 SAMPLE_RATE = 44100
 
 
-# ==============================================================================
-# ১. অডিও ফিল্টার হেল্পার
-# ==============================================================================
 def butter_bandpass(lowcut, highcut, fs, order=3):
     nyq = 0.5 * fs
     low = max(0.001, min(lowcut / nyq, 0.99))
@@ -34,7 +31,7 @@ def butter_highpass(cutoff, fs, order=3):
     return b, a
 
 
-def normalize_and_fade(wave, volume=0.5, fade_in=0.02, fade_out=0.05):
+def normalize_and_fade(wave, volume=0.6, fade_in=0.015, fade_out=0.04):
     if len(wave) == 0:
         return wave
     peak = np.max(np.abs(wave))
@@ -50,139 +47,160 @@ def normalize_and_fade(wave, volume=0.5, fade_in=0.02, fade_out=0.05):
     return wave * volume
 
 
-# ==============================================================================
-# ২. ইউনিভার্সাল প্যারামেট্রিক সাউন্ড সিন্থেসিস কোর
-# ==============================================================================
-def engine_impact(freq_start, freq_end, decay, noise_mix=0.3, distortion=1.5, duration_sec=1.2, volume=0.7):
+def sfx_dramatic_hit(duration_sec=1.3, volume=0.85):
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
-    freq = freq_end + (freq_start - freq_end) * np.exp(-t * (decay * 2.5))
+    freq = 28 + 130 * np.exp(-t * 7.5)
     phase = 2 * np.pi * np.cumsum(freq) / SAMPLE_RATE
-    body = np.tanh(distortion * np.sin(phase)) * np.exp(-t * decay)
-
-    noise = np.random.normal(0, 1, n)
-    b, a = butter_lowpass(1200, SAMPLE_RATE, order=2)
-    blast = lfilter(b, a, noise) * np.exp(-t * (decay * 1.4))
-
-    raw = (1.0 - noise_mix) * body + noise_mix * blast
-    return normalize_and_fade(raw, volume=volume, fade_in=0.003, fade_out=0.1)
+    sub = np.tanh(2.5 * np.sin(phase)) * np.exp(-t * 2.5)
+    snap = np.random.normal(0, 1, n) * np.exp(-t * 28.0)
+    b, a = butter_bandpass(400, 3200, SAMPLE_RATE, order=2)
+    snap = lfilter(b, a, snap)
+    return normalize_and_fade(sub + 0.45 * snap, volume=volume, fade_in=0.002, fade_out=0.08)
 
 
-def engine_texture(low_hz, high_hz, duration_sec, mod_freq=0.5, crackle_rate=0.0, volume=0.25):
+def sfx_destruction_crumble(duration_sec=1.8, volume=0.78):
+    n = int(SAMPLE_RATE * duration_sec)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+    rumble = np.random.normal(0, 1, n)
+    b_lo, a_lo = butter_lowpass(320, SAMPLE_RATE, order=3)
+    rumble = lfilter(b_lo, a_lo, rumble) * np.exp(-t * 1.4)
+
+    debris = np.zeros(n)
+    for _ in range(36):
+        pos = np.random.randint(0, max(1, n - 700))
+        chunk = np.random.normal(0, 1, 700) * np.exp(-np.linspace(0, 14, 700))
+        debris[pos:pos + 700] += chunk
+    b_hi, a_hi = butter_bandpass(800, 4200, SAMPLE_RATE, order=2)
+    debris = lfilter(b_hi, a_hi, debris) * np.exp(-t * 1.2)
+    return normalize_and_fade(1.2 * rumble + 0.8 * debris, volume=volume, fade_in=0.01, fade_out=0.12)
+
+
+def sfx_sword_battle(duration_sec=0.85, volume=0.75):
+    n = int(SAMPLE_RATE * duration_sec)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+    freqs = [1380, 2150, 3290, 4750, 6100]
+    clang = sum(np.sin(2 * np.pi * f * t) * np.exp(-t * (5.5 + i * 2.0)) for i, f in enumerate(freqs))
+    scrape = np.random.normal(0, 1, n) * np.exp(-t * 25.0)
+    b, a = butter_highpass(1800, SAMPLE_RATE, order=2)
+    scrape = lfilter(b, a, scrape)
+    return normalize_and_fade(clang + 0.55 * scrape, volume=volume, fade_in=0.003, fade_out=0.06)
+
+
+def sfx_dig_earth(duration_sec=0.45, volume=0.72):
+    n = int(SAMPLE_RATE * duration_sec)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+    thud = np.sin(2 * np.pi * (42 + 95 * np.exp(-t * 22)) * t) * np.exp(-t * 15)
+    dirt = np.random.normal(0, 1, n) * np.exp(-t * 9.5)
+    b, a = butter_bandpass(450, 2800, SAMPLE_RATE, order=2)
+    dirt = lfilter(b, a, dirt)
+    return normalize_and_fade(thud + 0.85 * dirt, volume=volume, fade_in=0.004, fade_out=0.05)
+
+
+def sfx_fire_burst(duration_sec=1.2, volume=0.68):
+    n = int(SAMPLE_RATE * duration_sec)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+    flame = np.random.normal(0, 1, n)
+    b, a = butter_bandpass(180, 1400, SAMPLE_RATE, order=2)
+    flame = lfilter(b, a, flame) * np.sin(np.pi * (t / duration_sec))
+    crackles = (np.random.rand(n) > 0.996).astype(np.float32) * np.random.normal(0, 4.0, n)
+    return normalize_and_fade(flame + crackles, volume=volume, fade_in=0.05, fade_out=0.15)
+
+
+def sfx_paper_map(duration_sec=0.65, volume=0.65):
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
     noise = np.random.normal(0, 1, n)
-    b, a = butter_bandpass(low_hz, high_hz, SAMPLE_RATE, order=2)
-    filtered = lfilter(b, a, noise)
-
-    mod = 0.65 + 0.35 * np.sin(2 * np.pi * mod_freq * t + np.random.uniform(0, 6.28))
-    out = filtered * mod
-
-    if crackle_rate > 0:
-        sparks = (np.random.rand(n) > (1.0 - crackle_rate)).astype(np.float32) * np.random.normal(0, 3.0, n)
-        b_hi, a_hi = butter_bandpass(1500, 6000, SAMPLE_RATE, order=2)
-        out += lfilter(b_hi, a_hi, sparks)
-
-    return normalize_and_fade(out, volume=volume, fade_in=0.15, fade_out=0.2)
+    b, a = butter_bandpass(1500, 5800, SAMPLE_RATE, order=2)
+    paper = lfilter(b, a, noise) * (0.5 + 0.5 * np.sin(2 * np.pi * 12 * t))
+    return normalize_and_fade(paper, volume=volume, fade_in=0.02, fade_out=0.06)
 
 
-def engine_resonance(freqs, decay, scrape_mix=0.2, duration_sec=0.8, volume=0.5):
+def sfx_thunder_storm(duration_sec=2.2, volume=0.82):
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
-    tone = np.zeros(n)
-    for idx, f in enumerate(freqs):
-        tone += np.sin(2 * np.pi * f * t) * np.exp(-t * (decay + idx * 1.8))
-
-    if scrape_mix > 0:
-        scrape = np.random.normal(0, 1, n) * np.exp(-t * (decay * 4))
-        b, a = butter_highpass(2000, SAMPLE_RATE, order=2)
-        tone += scrape_mix * lfilter(b, a, scrape)
-
-    return normalize_and_fade(tone, volume=volume, fade_in=0.005, fade_out=0.08)
+    crack = np.random.normal(0, 1, n) * np.exp(-t * 14.0)
+    rumble = np.random.normal(0, 1, n)
+    b, a = butter_lowpass(220, SAMPLE_RATE, order=3)
+    rumble = lfilter(b, a, rumble) * np.exp(-t * 1.1)
+    return normalize_and_fade(0.7 * crack + 1.3 * rumble, volume=volume, fade_in=0.005, fade_out=0.2)
 
 
-def engine_motion(f_low, f_high, duration_sec=0.35, speed_curve=1.0, volume=0.3):
+def sfx_water_splash(duration_sec=1.1, volume=0.65):
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
     noise = np.random.normal(0, 1, n)
-    b, a = butter_bandpass(f_low, f_high, SAMPLE_RATE, order=2)
-    filtered = lfilter(b, a, noise)
-    env = (np.sin(np.pi * (t / duration_sec)) ** speed_curve)
-    return normalize_and_fade(filtered * env, volume=volume, fade_in=0.02, fade_out=0.05)
+    b, a = butter_bandpass(350, 2400, SAMPLE_RATE, order=2)
+    water = lfilter(b, a, noise) * np.sin(np.pi * (t / duration_sec))
+    return normalize_and_fade(water, volume=volume, fade_in=0.06, fade_out=0.15)
 
 
-# ==============================================================================
-# ৩. ডাইনামিক ফোলি ও অ্যাম্বিয়েন্স জেনারেটর
-# ==============================================================================
-def generate_dynamic_sfx(action_type, dur=1.0):
-    if action_type == "thunder":
-        return engine_impact(95, 24, decay=1.1, noise_mix=0.65, distortion=2.2, duration_sec=2.4, volume=0.75)
-    elif action_type == "gunshot":
-        return engine_impact(420, 35, decay=14.0, noise_mix=0.75, distortion=3.5, duration_sec=0.55, volume=0.78)
-    elif action_type == "boom":
-        return engine_impact(145, 28, decay=2.4, noise_mix=0.25, distortion=2.5, duration_sec=1.5, volume=0.75)
-    elif action_type == "crumble":
-        return engine_texture(90, 950, duration_sec=1.8, mod_freq=2.2, crackle_rate=0.004, volume=0.60)
-    elif action_type == "dig":
-        return engine_impact(130, 42, decay=16.0, noise_mix=0.55, distortion=1.8, duration_sec=0.35, volume=0.55)
-    elif action_type == "sword":
-        return engine_resonance([1480, 2240, 3410, 4920], decay=5.5, scrape_mix=0.45, duration_sec=0.75, volume=0.52)
-    elif action_type == "chime":
-        return engine_resonance([587.33, 880.0, 1174.66, 1760.0], decay=3.2, scrape_mix=0.0, duration_sec=1.2, volume=0.45)
-    elif action_type == "tick":
-        return engine_resonance([2200, 3900], decay=80.0, scrape_mix=0.1, duration_sec=0.07, volume=0.38)
-    elif action_type == "pop":
-        return engine_impact(850, 260, decay=35.0, noise_mix=0.05, distortion=1.1, duration_sec=0.11, volume=0.42)
-    elif action_type == "paper":
-        return engine_texture(1400, 5200, duration_sec=0.65, mod_freq=9.0, crackle_rate=0.002, volume=0.40)
-    elif action_type == "vehicle":
-        return engine_motion(90, 480, duration_sec=min(2.5, max(0.5, dur)), speed_curve=1.2, volume=0.42)
-    else:  # subtle swoosh
-        return engine_motion(280, 1050, duration_sec=0.32, speed_curve=2.0, volume=0.25)
+def sfx_riser_tension(duration_sec=1.2, volume=0.58):
+    n = int(SAMPLE_RATE * duration_sec)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+    freq = 110 + 480 * ((t / duration_sec) ** 2)
+    phase = 2 * np.pi * np.cumsum(freq) / SAMPLE_RATE
+    tone = np.sin(phase) * ((t / duration_sec) ** 1.8)
+    noise = np.random.normal(0, 1, n)
+    b, a = butter_bandpass(400, 2800, SAMPLE_RATE, order=2)
+    whoosh = lfilter(b, a, noise) * ((t / duration_sec) ** 2.2)
+    return normalize_and_fade(0.6 * tone + 0.7 * whoosh, volume=volume, fade_in=0.08, fade_out=0.02)
 
 
-def generate_dynamic_ambience(amb_type, dur):
-    if amb_type == "rain":
-        return engine_texture(800, 5500, duration_sec=dur, mod_freq=0.25, crackle_rate=0.005, volume=0.22)
+def sfx_ui_pop(duration_sec=0.12, volume=0.55):
+    n = int(SAMPLE_RATE * duration_sec)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+    freq = 320 + 680 * np.exp(-t * 42)
+    phase = 2 * np.pi * np.cumsum(freq) / SAMPLE_RATE
+    return normalize_and_fade(np.sin(phase) * np.exp(-t * 30), volume=volume, fade_in=0.002, fade_out=0.02)
+
+
+def sfx_clock_tick(duration_sec=0.08, volume=0.52):
+    n = int(SAMPLE_RATE * duration_sec)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+    click = np.sin(2 * np.pi * 2200 * t) + 0.7 * np.sin(2 * np.pi * 3900 * t)
+    return normalize_and_fade(click * np.exp(-t * 75), volume=volume, fade_in=0.001, fade_out=0.01)
+
+
+def sfx_soft_swoosh(duration_sec=0.35, volume=0.45):
+    n = int(SAMPLE_RATE * duration_sec)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+    noise = np.random.normal(0, 1, n)
+    b, a = butter_bandpass(320, 1500, SAMPLE_RATE, order=2)
+    filtered = lfilter(b, a, noise) * (np.sin(np.pi * (t / duration_sec)) ** 1.8)
+    return normalize_and_fade(filtered, volume=volume, fade_in=0.02, fade_out=0.04)
+
+
+def generate_ambience_bed(amb_type, duration_sec, volume=0.22):
+    n = int(SAMPLE_RATE * duration_sec)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+    noise = np.random.normal(0, 1, n)
+
+    if amb_type == "fire":
+        b, a = butter_bandpass(140, 1100, SAMPLE_RATE, order=2)
+        bed = lfilter(b, a, noise) * (0.7 + 0.3 * np.sin(2 * np.pi * 2.1 * t))
+        sparks = (np.random.rand(n) > 0.998).astype(np.float32) * np.random.normal(0, 3.0, n)
+        bed += sparks
     elif amb_type == "water":
-        return engine_texture(220, 1400, duration_sec=dur, mod_freq=0.18, crackle_rate=0.001, volume=0.20)
-    elif amb_type == "fire":
-        return engine_texture(110, 850, duration_sec=dur, mod_freq=1.8, crackle_rate=0.0025, volume=0.18)
+        b, a = butter_bandpass(250, 1600, SAMPLE_RATE, order=2)
+        bed = lfilter(b, a, noise) * (0.65 + 0.35 * np.sin(2 * np.pi * 0.25 * t))
     elif amb_type == "crowd":
-        return engine_texture(260, 1100, duration_sec=dur, mod_freq=0.8, crackle_rate=0.0005, volume=0.15)
-    elif amb_type == "space":
-        return engine_texture(60, 240, duration_sec=dur, mod_freq=0.12, crackle_rate=0.0, volume=0.16)
+        b, a = butter_bandpass(300, 1300, SAMPLE_RATE, order=2)
+        bed = lfilter(b, a, noise) * (0.75 + 0.25 * np.sin(2 * np.pi * 0.9 * t))
     else:
-        return engine_texture(160, 620, duration_sec=dur, mod_freq=0.3, crackle_rate=0.0, volume=0.12)
+        b, a = butter_bandpass(180, 750, SAMPLE_RATE, order=2)
+        bed = lfilter(b, a, noise) * (0.7 + 0.3 * np.sin(2 * np.pi * 0.35 * t))
+
+    return normalize_and_fade(bed, volume=volume, fade_in=0.3, fade_out=0.4)
 
 
-# ==============================================================================
-# ৪. মুড-ভিত্তিক ডাইনামিক মিউজিক কম্পোজার
-# ==============================================================================
-def compose_dynamic_bgm(duration_sec, mood="suspense", volume=0.18):
+def compose_dynamic_bgm(duration_sec, mood="suspense", volume=0.22):
     n = int(SAMPLE_RATE * duration_sec)
     t = np.linspace(0, duration_sec, n, endpoint=False)
 
-    mood_profiles = {
-        "action": {
-            "roots": [82.41, 65.41, 73.42, 61.74],
-            "third": 1.189, "pulse_hz": 0.25, "tempo_decay": 14.0, "cutoff": 1600
-        },
-        "emotional": {
-            "roots": [65.41, 49.00, 55.00, 43.65],
-            "third": 1.260, "pulse_hz": 1.0, "tempo_decay": 5.0, "cutoff": 900
-        },
-        "mystery": {
-            "roots": [61.74, 65.41, 58.27, 55.00],
-            "third": 1.189, "pulse_hz": 0.75, "tempo_decay": 8.0, "cutoff": 1050
-        },
-        "suspense": {
-            "roots": [73.42, 58.27, 49.00, 55.00],
-            "third": 1.189, "pulse_hz": 0.5, "tempo_decay": 11.0, "cutoff": 1250
-        }
-    }
-    prof = mood_profiles.get(mood, mood_profiles["suspense"])
-    roots = prof["roots"]
+    roots = [82.41, 65.41, 73.42, 61.74] if mood == "action" else [73.42, 58.27, 49.00, 55.00]
+    pulse_hz = 0.25 if mood == "action" else 0.5
+    tempo_decay = 13.0 if mood == "action" else 10.0
 
     bass = np.zeros(n)
     pad = np.zeros(n)
@@ -192,64 +210,58 @@ def compose_dynamic_bgm(duration_sec, mood="suspense", volume=0.18):
         end = min(n, start + step_samples)
         seg_t = t[start:end]
         f0 = roots[idx % len(roots)]
-        bass[start:end] = np.sin(2 * np.pi * f0 * seg_t) + 0.25 * np.sin(2 * np.pi * (f0 * 2) * seg_t)
+        bass[start:end] = np.sin(2 * np.pi * f0 * seg_t) + 0.3 * np.sin(2 * np.pi * (f0 * 2) * seg_t)
         pad[start:end] = (
             0.4 * np.sin(2 * np.pi * (f0 * 4) * seg_t)
-            + 0.3 * np.sin(2 * np.pi * (f0 * 4 * prof["third"]) * seg_t)
+            + 0.3 * np.sin(2 * np.pi * (f0 * 4 * 1.189) * seg_t)
             + 0.3 * np.sin(2 * np.pi * (f0 * 6) * seg_t)
         )
 
-    p_phase = (t % prof["pulse_hz"]) / prof["pulse_hz"]
-    rhythm = np.exp(-p_phase * prof["tempo_decay"]) * np.sin(2 * np.pi * 62.0 * t)
+    p_phase = (t % pulse_hz) / pulse_hz
+    rhythm = np.exp(-p_phase * tempo_decay) * np.sin(2 * np.pi * 64.0 * t)
 
-    hat_noise = np.random.normal(0, 1, n)
-    b_hi, a_hi = butter_highpass(5200, SAMPLE_RATE, order=2)
-    hat_noise = lfilter(b_hi, a_hi, hat_noise)
-    hat_env = np.exp(-((t % 0.25) / 0.25) * 28.0) * (0.28 if mood == "action" else 0.16)
-    hats = hat_noise * hat_env
-
-    raw_bgm = 0.55 * bass + 0.35 * pad + 0.45 * rhythm + 0.20 * hats
-    b_lp, a_lp = butter_lowpass(prof["cutoff"], SAMPLE_RATE, order=2)
+    raw_bgm = 0.55 * bass + 0.35 * pad + 0.50 * rhythm
+    b_lp, a_lp = butter_lowpass(1350, SAMPLE_RATE, order=2)
     smooth_bgm = lfilter(b_lp, a_lp, raw_bgm)
-
-    return normalize_and_fade(smooth_bgm, volume=volume, fade_in=0.6, fade_out=0.8)
-
-
-# ==============================================================================
-# ৫. মাইক্রো-ইভেন্ট স্ক্যানার (HTML-এর প্রতিটি ইভেন্ট ও অ্যানিমেশন ডিটেক্টর)
-# ==============================================================================
-def classify_action_from_snippet(snippet, default_sfx="pop"):
-    s = snippet.lower()
-    if re.search(r"(thunder|lightning|storm|flash)", s):
-        return "thunder", 2.4
-    if re.search(r"(gun|shoot|bullet|rifle|pistol|sniper)", s):
-        return "gunshot", 0.55
-    if re.search(r"(crumble|destroy|temple|ruin|collapse|fall|earthquake|blast|explode|shake)", s):
-        return "crumble", 1.8
-    if re.search(r"(dig|shovel|pickaxe|earth|excavat|bury|dirt)", s):
-        return "dig", 0.35
-    if re.search(r"(war|sword|army|battle|soldier|emperor|roman|shield|knife|clash)", s):
-        return "sword", 0.75
-    if re.search(r"(car|train|plane|rocket|engine|drive|speed|ship|move|slide)", s):
-        return "vehicle", 1.2
-    if re.search(r"(map|pin|route|path|scroll|jerusalem|location|arrow|book|page|line|draw)", s):
-        return "paper", 0.65
-    if re.search(r"(clock|dial|century|centuries|year|time|timer)", s):
-        return "tick", 0.07
-    if re.search(r"(discover|treasure|gold|church|holy|cross|tomb|light|glow|star|badge|title|hero)", s):
-        return "chime", 1.2
-    if re.search(r"(impact|boom|slam|drop|heavy|king|empire)", s):
-        return "boom", 1.5
-    return default_sfx, 0.15
+    return normalize_and_fade(smooth_bgm, volume=volume, fade_in=0.5, fade_out=0.7)
 
 
-def analyze_clip_context(html_path, chunk_idx, total_dur_sec):
-    raw_events = []  # (time_sec, sfx_name, dur)
+def detect_sound_for_english_context(text_and_code, is_shot_start=False):
+    s = text_and_code.lower()
+
+    if re.search(r"\b(crumble|destroy|destroyed|temple|ruin|ruins|collapse|collapsed|earthquake|blast|explode|shake|shatter|demolish|razed|debris)\b", s):
+        return "crumble"
+    if re.search(r"\b(war|sword|swords|army|armies|battle|soldier|soldiers|emperor|roman|romans|shield|knife|clash|attack|fight|siege|legion|conquer|blood)\b", s):
+        return "sword"
+    if re.search(r"\b(dig|dug|shovel|pickaxe|excavate|excavation|bury|buried|dirt|hill|soil|earth|mound|tunnel|stone|build|built)\b", s):
+        return "dig"
+    if re.search(r"\b(fire|torch|flame|flames|burn|burned|burning|ash|ashes|smoke)\b|#ef4444|#f97316|#dc2626", s):
+        return "fire"
+    if re.search(r"\b(thunder|lightning|storm|sky|cloud|flash)\b", s):
+        return "thunder"
+    if re.search(r"\b(ocean|sea|river|water|wave|waves|rain|flood|boat|ship)\b", s):
+        return "water"
+    if re.search(r"\b(map|pin|route|scroll|jerusalem|book|page|document|letter|draw|path|line|location|city)\b", s):
+        return "paper"
+    if re.search(r"\b(clock|dial|century|centuries|year|years|timer|decade|decades|era|age|time)\b", s):
+        return "tick"
+    if re.search(r"\b(secret|mystery|hidden|unknown|clue|discover|discovered|treasure|tomb|church|holy|cross|truth|never|until)\b", s):
+        return "riser"
+
+    return "hit" if is_shot_start else "pop"
+
+
+def build_timeline_from_html_and_script(html_path, chunk_idx, total_dur_sec):
+    events = []
     ambiences = []
+
     html_code = ""
     if os.path.exists(html_path):
         with open(html_path, "r", encoding="utf-8") as f:
             html_code = f.read()
+
+    clean_html = re.sub(r"<head>.*?</head>", "", html_code, flags=re.S | re.I)
+    clean_html = re.sub(r"<style[^>]*>.*?</style>", "", clean_html, flags=re.S | re.I)
 
     narration_text = ""
     chunks_json = os.path.join(os.path.dirname(html_path), "chunks.json")
@@ -263,102 +275,73 @@ def analyze_clip_context(html_path, chunk_idx, total_dur_sec):
         except Exception:
             pass
 
-    full_context = (html_code + " " + narration_text).lower()
+    full_text = (clean_html + " " + narration_text).lower()
+    mood = "action" if re.search(r"\b(war|battle|attack|destroy|siege|army|fight|blood)\b", full_text) else "suspense"
 
-    # ১. পুরো ক্লিপের মিউজিক মুড
-    if re.search(r"(war|battle|attack|gun|shoot|chase|fast|explode|danger|fight)", full_context):
-        mood = "action"
-    elif re.search(r"(sad|cry|death|pray|holy|hope|love|tear|peace|god)", full_context):
-        mood = "emotional"
-    elif re.search(r"(secret|mystery|hidden|ancient|unknown|clue|puzzle|space|alien)", full_context):
-        mood = "mystery"
-    else:
-        mood = "suspense"
-
-    # ২. শট কাট টাইমলাইন ও অ্যাম্বিয়েন্স
     shot_cuts = [0.0]
-    for m in re.finditer(r"t_ms\s*<\s*(\d+)", html_code):
+    for m in re.finditer(r"t_ms\s*<\s*(\d+)", clean_html):
         sec = int(m.group(1)) / 1000.0
         if 0.6 < sec < total_dur_sec - 0.3:
             shot_cuts.append(sec)
     shot_cuts = sorted(list(set(shot_cuts)))
     shot_cuts.append(total_dur_sec)
 
-    shot_blocks = re.split(r"if\s*\(\s*activeShot\s*===\s*\d+\s*\)", html_code)
+    shot_blocks = re.split(r"if\s*\(\s*activeShot\s*===\s*\d+\s*\)", clean_html)
 
     for idx in range(len(shot_cuts) - 1):
         s_start = shot_cuts[idx]
         s_end = shot_cuts[idx + 1]
         s_dur = max(0.4, s_end - s_start)
-        block = (shot_blocks[idx + 1] if (idx + 1) < len(shot_blocks) else html_code).lower()
+        block = shot_blocks[idx + 1] if (idx + 1) < len(shot_blocks) else clean_html
 
-        # শট শুরুর প্রধান ইভেন্ট
-        if idx > 0 and s_dur >= 1.8:
-            raw_events.append((max(0.0, s_start - 0.1), "swoosh", 0.32))
-        sfx_name, dur = classify_action_from_snippet(block[:600], default_sfx="pop")
-        raw_events.append((s_start + 0.12, sfx_name, dur))
+        if idx > 0 and s_dur >= 1.5:
+            events.append((max(0.0, s_start - 0.1), "swoosh"))
 
-        # শট জুড়ে অ্যাম্বিয়েন্স
-        if re.search(r"(rain|storm|drop|wet|monsoon)", block):
-            ambiences.append((s_start, s_end, "rain"))
-        elif re.search(r"(ocean|sea|river|water|wave|underwater|boat)", block):
-            ambiences.append((s_start, s_end, "water"))
-        elif re.search(r"(fire|torch|flame|burn|#ff4|#f97316|#ef4444)", block):
+        snd = detect_sound_for_english_context(block, is_shot_start=True)
+        events.append((s_start + 0.1, snd))
+
+        if re.search(r"\b(fire|torch|flame|burn)\b", block, re.I):
             ambiences.append((s_start, s_end, "fire"))
-        elif re.search(r"(crowd|city|market|people|street|village|kingdom)", block):
+        elif re.search(r"\b(water|sea|river|rain)\b", block, re.I):
+            ambiences.append((s_start, s_end, "water"))
+        elif re.search(r"\b(crowd|city|people|street|kingdom)\b", block, re.I):
             ambiences.append((s_start, s_end, "crowd"))
-        elif re.search(r"(space|galaxy|planet|cosmos|orbit|void)", block):
-            ambiences.append((s_start, s_end, "space"))
         else:
             ambiences.append((s_start, s_end, "wind"))
 
-    # ৩. HTML-এর ভেতরের প্রতিটি মাইক্রো-ইভেন্ট স্ক্যান করা (JS ট্রিগার, CSS ডিলে, SVG begin)
-    # (ক) জাভাস্ক্রিপ্ট টাইম কন্ডিশন: যেমন t_ms > 2500, t_ms >= 4200, t > 3.5
-    for m in re.finditer(r"\b(t_ms|t|time|elapsed)\s*(?:>=|>|===|==)\s*(\d+(?:\.\d+)?)", html_code):
+    # JS micro-events
+    for m in re.finditer(r"\b(t_ms|t|time|elapsed)\s*(?:>=|>|===|==)\s*(\d+(?:\.\d+)?)", clean_html):
         var_name = m.group(1)
         val = float(m.group(2))
         sec = (val / 1000.0) if (var_name == "t_ms" or val > 60) else val
         if 0.2 < sec < total_dur_sec - 0.2:
-            context_window = html_code[m.end():m.end() + 350]
-            sfx_name, dur = classify_action_from_snippet(context_window, default_sfx="pop")
-            raw_events.append((sec, sfx_name, dur))
+            snippet = clean_html[m.end():m.end() + 300]
+            snd = detect_sound_for_english_context(snippet, is_shot_start=False)
+            events.append((sec, snd))
 
-    # (খ) CSS animation-delay এবং transition-delay স্ক্যান
-    for m in re.finditer(r"(?:animation-delay|transition-delay)\s*:\s*(\d+(?:\.\d+)?)(ms|s)", html_code, re.I):
-        val = float(m.group(1))
-        unit = m.group(2).lower()
-        sec = (val / 1000.0) if unit == "ms" else val
-        if 0.2 < sec < total_dur_sec - 0.2:
-            context_window = html_code[max(0, m.start() - 250):m.end() + 150]
-            sfx_name, dur = classify_action_from_snippet(context_window, default_sfx="pop")
-            raw_events.append((sec, sfx_name, dur))
+    # English narration sentence-by-sentence sync
+    if narration_text.strip():
+        sentences = [seg.strip() for seg in re.split(r"[.!?,;\n]+", narration_text) if len(seg.strip()) > 3]
+        if sentences:
+            step = total_dur_sec / len(sentences)
+            for i, sent in enumerate(sentences):
+                t_sent = i * step + 0.15
+                if t_sent < total_dur_sec - 0.3:
+                    snd = detect_sound_for_english_context(sent, is_shot_start=False)
+                    if snd != "pop" or (i % 2 == 0):
+                        events.append((t_sent, snd))
 
-    # (গ) SVG <animate ... begin="2.5s"> স্ক্যান
-    for m in re.finditer(r"<animate[^>]*\bbegin\s*=\s*['\"](\d+(?:\.\d+)?)(ms|s)['\"][^>]*>", html_code, re.I):
-        val = float(m.group(1))
-        unit = m.group(2).lower()
-        sec = (val / 1000.0) if unit == "ms" else val
-        if 0.2 < sec < total_dur_sec - 0.2:
-            context_window = html_code[max(0, m.start() - 200):m.end() + 200]
-            sfx_name, dur = classify_action_from_snippet(context_window, default_sfx="paper")
-            raw_events.append((sec, sfx_name, dur))
+    events.sort(key=lambda x: x[0])
+    final_events = []
+    last_t = -999.0
+    for t_sec, snd in events:
+        if (t_sec - last_t) >= 0.45:
+            final_events.append((t_sec, snd))
+            last_t = t_sec
 
-    # (ঘ) ডুপ্লিকেট বা ০.২৫ সেকেন্ডের ভেতরে ওভারল্যাপ হওয়া সাউন্ড ফিল্টার করা যাতে জগাখিচুড়ি না হয়
-    raw_events.sort(key=lambda x: x[0])
-    filtered_events = []
-    last_time_by_type = {}
-    for t_sec, sfx_name, dur in raw_events:
-        last_t = last_time_by_type.get(sfx_name, -999.0)
-        if (t_sec - last_t) >= 0.35:
-            filtered_events.append((t_sec, sfx_name, dur))
-            last_time_by_type[sfx_name] = t_sec
-
-    return filtered_events, ambiences, mood
+    return final_events, ambiences, mood
 
 
-# ==============================================================================
-# ৬. মাল্টি-লেয়ার অডিও মিক্সার
-# ==============================================================================
 def mix_segment(target_track, wave, start_sec):
     start_idx = int(start_sec * SAMPLE_RATE)
     if start_idx >= len(target_track) or start_idx < 0:
@@ -385,29 +368,43 @@ def build_clip_audio(html_path, voice_mp3_path, output_wav_path):
     voice = voice_data.astype(np.float32) / 32768.0
     total_dur = len(voice) / SAMPLE_RATE
 
-    events, ambiences, mood = analyze_clip_context(html_path, chunk_idx, total_dur)
+    events, ambiences, mood = build_timeline_from_html_and_script(html_path, chunk_idx, total_dur)
 
-    # ১. মুড-ভিত্তিক ডাইনামিক BGM + অটো-ডাকিং
-    bgm = compose_dynamic_bgm(total_dur, mood=mood, volume=0.18)
+    bgm = compose_dynamic_bgm(total_dur, mood=mood, volume=0.22)
     voice_env = np.convolve(np.abs(voice), np.ones(int(SAMPLE_RATE * 0.25)) / (SAMPLE_RATE * 0.25), mode='same')
-    ducking = np.where(voice_env > 0.015, 0.58, 1.0)
+    ducking = np.where(voice_env > 0.015, 0.62, 1.0)
     bgm = bgm * ducking
 
-    # ২. ডাইনামিক অ্যাম্বিয়েন্স ট্র্যাক
     ambience_track = np.zeros_like(voice)
     for a_start, a_end, a_type in ambiences:
         seg_dur = max(0.2, a_end - a_start)
-        mix_segment(ambience_track, generate_dynamic_ambience(a_type, seg_dur), a_start)
+        mix_segment(ambience_track, generate_ambience_bed(a_type, seg_dur, volume=0.22), a_start)
 
-    # ৩. প্যারামেট্রিক ফোলি ও SFX ট্র্যাক
     sfx_track = np.zeros_like(voice)
-    for t_sec, sfx_name, dur in events:
-        mix_segment(sfx_track, generate_dynamic_sfx(sfx_name, dur), t_sec)
+    sfx_bank = {
+        "hit": sfx_dramatic_hit(),
+        "crumble": sfx_destruction_crumble(),
+        "sword": sfx_sword_battle(),
+        "dig": sfx_dig_earth(),
+        "fire": sfx_fire_burst(),
+        "thunder": sfx_thunder_storm(),
+        "water": sfx_water_splash(),
+        "paper": sfx_paper_map(),
+        "tick": sfx_clock_tick(),
+        "riser": sfx_riser_tension(),
+        "swoosh": sfx_soft_swoosh(),
+        "pop": sfx_ui_pop(),
+    }
 
-    # ফাইনাল মাস্টারিং
-    mixed = (voice * 1.0) + (sfx_track * 0.85) + (ambience_track * 0.80) + bgm
+    for t_sec, snd in events:
+        if snd in sfx_bank:
+            mix_segment(sfx_track, sfx_bank[snd], t_sec)
+
+    mixed = (voice * 1.0) + (sfx_track * 0.90) + (ambience_track * 0.85) + bgm
     mixed = np.tanh(mixed * 0.95)
 
     final_int16 = np.int16(np.clip(mixed, -1.0, 1.0) * 32767)
     wavfile.write(output_wav_path, SAMPLE_RATE, final_int16)
-    print(f"Generated micro-event dynamic audio [{mood}]: {output_wav_path} ({len(events)} synced events, {len(ambiences)} ambiences)", flush=True)
+
+    summary = ", ".join([f"{round(t,1)}s:{s}" for t, s in events[:12]])
+    print(f"Generated scene audio [{mood}]: {output_wav_path} | Events({len(events)}): [{summary}]", flush=True)
