@@ -148,10 +148,9 @@ if os.path.exists(audio):
     os.remove(video)
     if os.path.exists(mixed_audio):
       os.remove(mixed_audio)
-
-  else:
+else:
     os.replace(video, final)
-  print(f"Saved {final}", flush=True)
+print(f"Saved {final}", flush=True)
 
 
 def merge():
