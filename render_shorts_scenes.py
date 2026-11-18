@@ -4,8 +4,6 @@ import json
 import os
 import subprocess
 import sys
-from generate_procedural_audio import build_clip_audio
-
 
 FPS = 30  # শর্টসের জন্য 30 FPS স্মুথ হবে
 WIDTH, HEIGHT = 720, 1280
@@ -34,6 +32,7 @@ window.setTimeout = () => 0;
 
 def render(i):
   from playwright.sync_api import sync_playwright
+  from generate_procedural_audio import build_clip_audio
 
   with open(f"{IN_DIR}/chunks.json", encoding="utf-8") as f:
     meta = {c["index"]: c for c in json.load(f)}
