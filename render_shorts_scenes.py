@@ -4,6 +4,8 @@ import json
 import os
 import subprocess
 import sys
+from generate_procedural_audio import build_clip_audio
+
 
 FPS = 30  # শর্টসের জন্য 30 FPS স্মুথ হবে
 WIDTH, HEIGHT = 720, 1280
@@ -116,7 +118,10 @@ def render(i):
   if len(seen) <= 1:
     print("WARNING: frames look static, check the HTML.", flush=True)
 
-  if os.path.exists(audio):
+    if os.path.exists(audio):
+    mixed_audio = f"{OUT_DIR}/mixed_audio_{i}.wav"
+    build_clip_audio(scene, audio, mixed_audio)
+
     subprocess.run(
         [
             "ffmpeg",
@@ -126,7 +131,7 @@ def render(i):
             "-i",
             video,
             "-i",
-            audio,
+            mixed_audio,
             "-c:v",
             "copy",
             "-c:a",
@@ -141,6 +146,9 @@ def render(i):
         check=True,
     )
     os.remove(video)
+    if os.path.exists(mixed_audio):
+      os.remove(mixed_audio)
+
   else:
     os.replace(video, final)
   print(f"Saved {final}", flush=True)
