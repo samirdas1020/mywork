@@ -118,7 +118,7 @@ def render(i):
   if len(seen) <= 1:
     print("WARNING: frames look static, check the HTML.", flush=True)
 
-if os.path.exists(audio):
+  if os.path.exists(audio):
     mixed_audio = f"{OUT_DIR}/mixed_audio_{i}.wav"
     build_clip_audio(scene, audio, mixed_audio)
 
@@ -148,10 +148,9 @@ if os.path.exists(audio):
     os.remove(video)
     if os.path.exists(mixed_audio):
       os.remove(mixed_audio)
-else:
+  else:
     os.replace(video, final)
-print(f"Saved {final}", flush=True)
-
+  print(f"Saved {final}", flush=True)
 
 def merge():
   files = glob.glob(f"{OUT_DIR}/synced_*.mp4")
