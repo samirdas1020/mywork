@@ -117,41 +117,39 @@ def render(i):
     print("Page JS errors:", errors[:3], flush=True)
   if len(seen) <= 1:
     print("WARNING: frames look static, check the HTML.", flush=True)
+  if os.path.exists(audio):
+    mixed_audio = f"{OUT_DIR}/mixed_audio_{i}.wav"
+    build_clip_audio(scene, audio, mixed_audio)
 
-      if os.path.exists(audio):
-      mixed_audio = f"{OUT_DIR}/mixed_audio_{i}.wav"
-      build_clip_audio(scene, audio, mixed_audio)
-
-      subprocess.run(
-          [
-              "ffmpeg",
-              "-y",
-              "-loglevel",
-              "error",
-              "-i",
-              video,
-              "-i",
-              mixed_audio,
-              "-c:v",
-              "copy",
-              "-c:a",
-              "aac",
-              "-b:a",
-              "192k",
-              "-af",
-              "apad",
-              "-shortest",
-              final,
-          ],
-          check=True,
-      )
-      os.remove(video)
-      if os.path.exists(mixed_audio):
-        os.remove(mixed_audio)
-    else:
-      os.replace(video, final)
-    print(f"Saved {final}", flush=True)
-
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-i",
+            video,
+            "-i",
+            mixed_audio,
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            "-af",
+            "apad",
+            "-shortest",
+            final,
+        ],
+        check=True,
+    )
+    os.remove(video)
+    if os.path.exists(mixed_audio):
+      os.remove(mixed_audio)
+  else:
+    os.replace(video, final)
+  print(f"Saved {final}", flush=True)
 
 def merge():
   files = glob.glob(f"{OUT_DIR}/synced_*.mp4")
