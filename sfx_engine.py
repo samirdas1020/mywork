@@ -78,6 +78,7 @@ def analyze(page, step_js, frames, fps):
 
 # ---------------------------------------------------------------- 2. event detection
 # Per-kind weights are taste knobs for the mix, NOT detection rules.
+WHOOSH = False  # True = use swept-noise whoosh for cuts/jumps; False = soft thump / pop
 PRIOR = dict(cut=1.0, appear=0.7, text=0.9, jump=0.8, stop=0.9, bounce=1.0, shake=0.8)
 
 
@@ -347,6 +348,10 @@ def synth_event(e, rng):
     pitch = 70 + 1100 * (1 - e.get("size", I)) ** 2     # bigger => lower
     rising = (e.get("dy", 0) < 0) or (e.get("dy", 0) == 0 and e.get("dx", 0) >= 0)
     b0, b1 = (0.1, 0.85) if rising else (0.85, 0.1)
+    if k == "cut" and not WHOOSH:                       # soft low thump, no hiss
+        return voice(0.22 + 0.2 * I, 150, 52, 1, 0.08, 0.3, 0.2, 0.004, 2.5, rng)
+    if k == "jump" and not WHOOSH:                      # short pop
+        return voice(0.07 + 0.15 * I, pitch * 1.6, pitch, 1, 0.1, 0.6, 0.4, 0.002, 3, rng)
     if k == "cut":
         d = 0.28 + 0.5 * I
         s = whoosh(d, True, e.get("size", I), rng)
