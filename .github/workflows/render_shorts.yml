@@ -23,9 +23,9 @@ jobs:
           DRIVE_ZIP: ${{ inputs.drive_zip }}
         run: |
           pip install gdown
-          gdown "$DRIVE_ZIP" -O inputs.zip
+          gdown --fuzzy "$DRIVE_ZIP" -O inputs.zip
           unzip -o inputs.zip -d render_input
-          ls render_input
+          ls -la render_input
       - id: p
         name: Find scene files
         run: |
@@ -51,12 +51,12 @@ jobs:
           DRIVE_ZIP: ${{ inputs.drive_zip }}
         run: |
           pip install gdown
-          gdown "$DRIVE_ZIP" -O inputs.zip
+          gdown --fuzzy "$DRIVE_ZIP" -O inputs.zip
           unzip -o inputs.zip -d render_input
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install playwright
+          pip install playwright numpy
           playwright install --with-deps chromium
           ffmpeg -version | head -1
       - name: Render Shorts Chunk
