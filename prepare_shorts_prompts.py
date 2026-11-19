@@ -3,16 +3,23 @@ import os
 
 AUDIO_FILE = "input_audio.mp3"
 OUT = "prompts_output"
-TARGET_CHUNK_SEC = 30.0
-WIDTH, HEIGHT = 720, 1280  # শুধুমাত্র এখানে 9:16 ভার্টিকাল সাইজ করা হয়েছে
+TARGET_CHUNK_SEC = 28.0
+WIDTH, HEIGHT = 720, 1280  # 9:16 Vertical Full-Screen Canvas
 
 
 def build_cartoon_rigging_prompt(scene_text, duration, timeline="", chunk_idx=0):
   duration_ms = int(duration * 1000)
-  min_shots = max(4, int(round(duration / 5.0)))
+  min_shots = max(5, int(round(duration / 3.5)))
+  is_opening = chunk_idx == 0
+
+  hook_instruction = (
+      "OPENING VIRAL HOOK (0ms - 2000ms): Start IMMEDIATELY with high-contrast action, dramatic zoom/shake, and a punchy 2-4 word American English headline/number in the safe zone. Zero slow fade-ins or intro cards."
+      if is_opening
+      else "CONTINUATION HOOK (0ms - 1500ms): Open directly on high-tension visual action or a bold map/character shift to maintain viewer retention from the previous clip."
+  )
 
   return f"""
-You are an elite 2D Vector Animation Director (OverSimplified / Kurzgesagt studio quality). Build a complete, self-contained HTML5 file (`<!DOCTYPE html>`) with rich, cinematic, fast-paced multi-shot 9:16 VERTICAL vector animation for YouTube Shorts.
+You are an elite 2D Vector Animation Director (OverSimplified / Kurzgesagt studio quality). Build a complete, self-contained HTML5 file (`<!DOCTYPE html>`) with rich, cinematic, fast-paced multi-shot 9:16 VERTICAL vector animation for YouTube Shorts aimed at US & European audiences.
 
 Clip Index: Part {chunk_idx + 1}
 Narration: "{scene_text}"
@@ -21,8 +28,9 @@ Timed Sequence:
 {timeline}
 Canvas Coordinate System: {WIDTH}x{HEIGHT} (9:16 Vertical Full-Screen SVG)
 
-CRITICAL STUDIO QUALITY & SHOT RULES:
+CRITICAL STUDIO QUALITY & RETENTION RULES:
 1. HIGH-PACE MULTI-SHOT DIRECTION (MANDATORY):
+   - {hook_instruction}
    - A static scene is UNACCEPTABLE. NO modern studios, podcast mics, hosts, or talking heads. Focus 100% on historical environments, armies, architecture, tactical maps, and visual metaphors.
    - Divide this {duration}s clip into AT LEAST {min_shots} DISTINCT visual shots inside a single `<svg viewBox="0 0 {WIDTH} {HEIGHT}" style="width:100vw; height:100vh; display:block;">`:
      * `<g id="shot-1">...</g>`, `<g id="shot-2">...</g>`, up to `<g id="shot-{min_shots}">...</g>`
@@ -31,7 +39,7 @@ CRITICAL STUDIO QUALITY & SHOT RULES:
      * Medium dramatic character confrontation or action
      * Tactical war-room map / animated territory arrows / data visual metaphor
      * Extreme close-up showing intense character emotion or symbolic object
-   - In `window.updateSceneTime(t_ms)`, strictly cut between shots (`display: none` vs `inline`) synced to the Timed Sequence so the scene changes every 4-5 seconds.
+   - In `window.updateSceneTime(t_ms)`, strictly cut between shots (`display: none` vs `inline`) synced to the Timed Sequence so the scene changes roughly every 3-4 seconds.
 
 2. VERTICAL FRAMING & VIRTUAL CAMERA (9:16 SAFE ZONE):
    - Compose scenes vertically (`720x1280`): keep main characters and titles centered between X: 60 to 600 and Y: 200 to 980 so YouTube Shorts UI buttons never cover important details.
@@ -52,7 +60,7 @@ CRITICAL STUDIO QUALITY & SHOT RULES:
 
 5. VISUAL POLISH & TYPOGRAPHY:
    - Rich color palettes with `<linearGradient>`, `<radialGradient>`, drop shadows, and bold `3px-4px` dark outlines (`#1a1a2e`) on characters.
-   - NO subtitles. Use bold cinematic on-screen titles/labels (max 4 words: dates, locations, troop numbers) only when relevant cues hit.
+   - NO subtitles. Use bold cinematic on-screen titles/labels in American English (max 4 words: dates, locations, troop numbers) only when relevant cues hit.
 
 6. OUTPUT:
    - Output ONLY the standalone HTML code wrapped inside a single ```html ... ``` block. No explanations.
@@ -68,7 +76,6 @@ def build_timeline(chunk_segments, chunk_start, chunk_duration):
     a = max(round(sg.start - chunk_start, 1), 0.0)
     b = min(max(round(sg.end - chunk_start, 1), 0.0), round(chunk_duration, 1))
 
-    # Fill leading silence/gap
     if a > current_pos + 0.3:
       lines.append(
           f"[{current_pos:.1f}s - {a:.1f}s] Visual Setup: Cinematic establishing"
@@ -78,7 +85,6 @@ def build_timeline(chunk_segments, chunk_start, chunk_duration):
     lines.append(f"[{a:.1f}s - {b:.1f}s] Narration & Action: {sg.text.strip()}")
     current_pos = max(current_pos, b)
 
-  # Fill trailing gap
   if current_pos < chunk_duration - 0.3:
     lines.append(
         f"[{current_pos:.1f}s - {chunk_duration:.1f}s] Visual Hold: Dramatic"
