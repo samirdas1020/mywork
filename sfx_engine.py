@@ -78,6 +78,7 @@ def analyze(page, step_js, frames, fps):
 
 # ---------------------------------------------------------------- 2. event detection
 # Per-kind weights are taste knobs for the mix, NOT detection rules.
+CUT_SOUND = False  # False = no sound at shot changes (cuts still steer the music beat)
 WHOOSH = False  # True = use swept-noise whoosh for cuts/jumps; False = soft thump / pop
 PRIOR = dict(cut=1.0, appear=0.7, text=0.9, jump=0.8, stop=0.9, bounce=1.0, shake=0.8)
 
@@ -248,6 +249,8 @@ def _cluster(ev, fps, F):
             o["kind"], o["I"], o["size"] = "cut", _loud(float(np.sqrt(asum))), 1.0
             o["x"], o["y"], o["dx"], o["dy"] = 0.5, 0.5, 0.0, 0.0
             o["t"] = round(float(np.median([e["f"] for e in ap])) / fps, 3)
+            for tx in (e for e in g if e["kind"] == "text"):
+                out.append(dict(tx, t=o["t"], n=1))
         else:
             o["t"] = round(top["f"] / fps, 3)
         o["n"] = len(g)
@@ -267,7 +270,7 @@ def select(events, dur_s):
     keep = []
     for e in cand:
         if e["kind"] == "shake" or all(
-                k["kind"] == "shake" or abs(e["t"] - k["t"]) >= 0.15 + 0.45 * max(e["I"], k["I"])
+                k["kind"] == "shake" or (k["kind"] == "cut" and not CUT_SOUND) or abs(e["t"] - k["t"]) >= 0.15 + 0.45 * max(e["I"], k["I"])
                 for k in keep):
             keep.append(e)
     keep.sort(key=lambda e: e["t"])
@@ -343,40 +346,150 @@ def whoosh(dur, rising, size, rng):
     return out / (np.abs(out).max() + 1e-9)
 
 
+# ---- building blocks: different timbres, not just tones -------------------------------
+def _sum(*parts):
+    """parts = (array, gain, delay_seconds)"""
+    n = max(int(d * SR) + len(x) for x, g, d in parts)
+    out = np.zeros(n)
+    for x, g, d in parts:
+        i = int(d * SR)
+        out[i:i + len(x)] += x * g
+    return out
+
+
+def _norm(x):
+    return x / (np.abs(x).max() + 1e-9)
+
+
+def _reverb(x, rt60, wet, rng):
+    """Room/hall tail: convolve with decaying, progressively darker noise."""
+    n = int(rt60 * 1.1 * SR)
+    t = np.arange(n) / SR
+    ir = rng.standard_normal(n) * np.exp(-6.9 * t / rt60)
+    ir = 0.4 * ir + 0.6 * _box(ir, 30)
+    m = len(x) + n - 1
+    L = 1 << (m - 1).bit_length()
+    y = np.fft.irfft(np.fft.rfft(x, L) * np.fft.rfft(ir, L), L)[:m]
+    y = y / (np.abs(y).max() + 1e-9) * wet * np.abs(x).max()
+    out = np.zeros(m)
+    out[:len(x)] = x
+    return out + y
+
+
+def _click(rng, dur=0.015, bright=0.8):
+    n = max(8, int(dur * SR))
+    z = rng.standard_normal(n)
+    z = z - _box(z, 2 + int((1 - bright) * 10))
+    return _norm(z * np.exp(-np.arange(n) / SR / (dur / 4)))
+
+
+def _q(f):
+    """Snap a frequency to a major pentatonic note so pitched sounds stay consonant."""
+    m = 69 + 12 * np.log2(max(f, 40) / 440.0)
+    best = min((c for c in range(int(m) - 3, int(m) + 4) if c % 12 in (0, 2, 4, 7, 9)),
+               key=lambda c: abs(c - m))
+    return 440.0 * 2 ** ((best - 69) / 12)
+
+
+def _partials(f, dur, parts, rng):
+    t = np.arange(int(dur * SR)) / SR
+    x = sum(a * np.sin(2 * np.pi * f * r * t + rng.uniform(0, 6.28)) * np.exp(-t / tau)
+            for r, a, tau in parts)
+    x[:int(0.002 * SR)] *= np.linspace(0, 1, int(0.002 * SR))
+    return _norm(x)
+
+
+def _bell(f, dur, rng):
+    t = np.arange(int(dur * SR)) / SR
+    idx = 3.0 * np.exp(-t / 0.25)
+    x = np.sin(2 * np.pi * f * t + idx * np.sin(2 * np.pi * f * 3.5 * t)) * np.exp(-t / (dur / 4))
+    x += 0.3 * np.sin(2 * np.pi * f * 2.0 * t) * np.exp(-t / (dur / 6))
+    x[:int(0.001 * SR)] *= np.linspace(0, 1, int(0.001 * SR))
+    return _norm(x)
+
+
+def _marimba(f, dur, rng):
+    return _partials(f, dur, [(1, 1, 0.22), (3.97, 0.45, 0.07), (9.9, 0.2, 0.025)], rng)
+
+
+def _clink(f, dur, rng):
+    x = _partials(f, dur, [(1, 1, 0.30), (2.32, 0.7, 0.18), (4.25, 0.5, 0.10), (6.63, 0.35, 0.06)], rng)
+    return _sum((x, 1, 0), (_click(rng, 0.008, 0.95), 0.4, 0))
+
+
+def _hit(size, I, rng):
+    """Cinematic impact: click + dropping body + sub tail + dark noise burst + hall reverb."""
+    f0 = 95 - 45 * size + rng.uniform(-6, 6)
+    body = voice(0.5 + 0.4 * I, f0 * 2.2, f0 * 0.6, 1, 0, 0.5, 0.5, 0.002, 2.2, rng)
+    sub = voice(0.7 + 0.5 * I, f0 * 0.55, f0 * 0.45, 1, 0, 0.5, 0.5, 0.01, 1.4, rng)
+    tex = voice(0.35, 100, 100, 0, 1, 0.5, 0.15, 0.002, 3, rng)
+    x = _norm(_sum((body, 1, 0), (sub, 0.6, 0.005), (_click(rng, 0.02, 0.9), 0.5, 0), (tex, 0.35, 0)))
+    return _reverb(x, 0.6 + 0.8 * I, 0.30 + 0.2 * I, rng)
+
+
+def _cut(size, I, rng):
+    v = int(rng.integers(0, 3))
+    if v == 0:
+        return _hit(size, I, rng)
+    if v == 1:                                           # low drum
+        x = _norm(_sum((voice(0.35, 170, 46, 1, 0.05, 0.4, 0.3, 0.002, 2.6, rng), 1, 0),
+                       (_click(rng, 0.012, 0.8), 0.45, 0)))
+        return _reverb(x, 0.5, 0.25, rng)
+    x = _norm(_sum((voice(1.0, 95, 34, 1, 0.12, 0.3, 0.15, 0.03, 1.1, rng), 1, 0),   # sub drop
+                   (_click(rng, 0.01, 0.7), 0.25, 0)))
+    return _reverb(x, 0.9, 0.3, rng)
+
+
+def _snap(rng):
+    n = _sum((_click(rng, 0.02, 0.8), 1, 0),
+             (voice(0.14, 100, 100, 0, 1, 0.45, 0.3, 0.001, 3, rng), 0.8, 0),
+             (voice(0.1, 220, 150, 1, 0, 0.5, 0.5, 0.001, 3, rng), 0.4, 0))
+    return _reverb(_norm(n), 0.25, 0.15, rng)
+
+
+def _appear(size, f, rng):
+    pool = ["tick", "glass"] if size < 0.1 else ["marimba", "tick", "glass"]
+    v = pool[int(rng.integers(0, len(pool)))]
+    if v == "marimba":
+        return _reverb(_marimba(f, 0.35, rng), 0.3, 0.15, rng)
+    if v == "glass":
+        return _reverb(_clink(f * 1.5, 0.3, rng), 0.35, 0.2, rng)
+    return _norm(_sum((_click(rng, 0.01, 0.9), 1, 0),
+                      (voice(0.06, f * 1.5, f, 1, 0, 0.5, 0.5, 0.001, 3, rng), 0.5, 0)))
+
+
+def _knock(size, rng):
+    f = 150 - 70 * size
+    x = _norm(_sum((_partials(f, 0.3, [(1, 1, 0.12), (2.7, 0.4, 0.05)], rng), 1, 0),
+                   (_click(rng, 0.012, 0.6), 0.5, 0)))
+    return _reverb(x, 0.3, 0.2, rng)
+
+
 def synth_event(e, rng):
     I, k = e["I"], e["kind"]
-    pitch = 70 + 1100 * (1 - e.get("size", I)) ** 2     # bigger => lower
-    rising = (e.get("dy", 0) < 0) or (e.get("dy", 0) == 0 and e.get("dx", 0) >= 0)
-    b0, b1 = (0.1, 0.85) if rising else (0.85, 0.1)
-    if k == "cut" and not WHOOSH:                       # soft low thump, no hiss
-        return voice(0.22 + 0.2 * I, 150, 52, 1, 0.08, 0.3, 0.2, 0.004, 2.5, rng)
-    if k == "jump" and not WHOOSH:                      # short pop
-        return voice(0.07 + 0.15 * I, pitch * 1.6, pitch, 1, 0.1, 0.6, 0.4, 0.002, 3, rng)
+    size = e.get("size", I)
+    f = _q(260 + 1300 * (1 - size) ** 2)                # bigger => lower; snapped to a scale
+    if WHOOSH and k in ("cut", "jump"):
+        rising = (e.get("dy", 0) < 0) or (e.get("dy", 0) == 0 and e.get("dx", 0) >= 0)
+        return whoosh(0.28 + 0.5 * I if k == "cut" else 0.15 + 0.35 * I, rising, size, rng)
     if k == "cut":
-        d = 0.28 + 0.5 * I
-        s = whoosh(d, True, e.get("size", I), rng)
-        if I > 0.6:
-            boom = voice(0.35, 120 * (1.4 - I), 40, 1, 0.15, 0.3, 0.2, 0.004, 2.5, rng)
-            s = np.r_[s, np.zeros(max(0, len(boom) - len(s)))] * 0.8
-            s[:len(boom)] += (I - 0.5) * 1.4 * boom
-        return s
-    if k == "jump":
-        d = 0.15 + 0.35 * I
-        return whoosh(d, rising, e.get("size", I), rng)
-    if k == "appear":
-        return voice(0.07 + 0.2 * I, pitch * 2, pitch, 1, 0.12, 0.7, 0.7, 0.002, 3, rng)
-    if k == "text":
-        d = 0.25 + 0.3 * I
-        a = voice(d, pitch, pitch, 1, 0, 0.5, 0.5, 0.002, 2.0, rng)
-        b = voice(d * 0.6, pitch * 2.76, pitch * 2.76, 1, 0, 0.5, 0.5, 0.002, 2.5, rng)
-        a[:len(b)] += 0.4 * b
-        return a
-    if k in ("stop", "bounce"):
-        return voice(0.1 + 0.4 * I, pitch, pitch * 0.5, 1, 0.35, 0.6, 0.3, 0.001, 3, rng)
-    if k == "shake":
+        x = _cut(size, I, rng)
+    elif k == "jump":
+        x = _snap(rng)
+    elif k == "appear":
+        x = _appear(size, f, rng)
+    elif k == "text":
+        x = _reverb(_bell(f * 0.75, 0.5 + 0.5 * I, rng), 0.8, 0.3, rng)
+    elif k == "bounce":
+        x = _reverb(_clink(f * 1.2, 0.3, rng), 0.3, 0.15, rng) if size < 0.25 else _knock(size, rng)
+    elif k == "stop":
+        x = _knock(size, rng)
+    elif k == "shake":
         d = min(4.0, max(0.4, e.get("dur", 1000) / 1000))
-        return voice(d, 38, 32, 0.5, 1, 0.03, 0.03, 0.15, 0.4, rng, wob=e.get("freq", 6))
-    return voice(0.1, 800, 400, 1, 0.1, 0.5, 0.5, 0.002, 3, rng)
+        x = voice(d, 38, 32, 0.5, 1, 0.03, 0.03, 0.15, 0.4, rng, wob=e.get("freq", 6))
+    else:
+        x = _click(rng, 0.02, 0.8)
+    return np.tanh(1.5 * _norm(x)) / np.tanh(1.5)
 
 
 def _seed(obj):
@@ -407,6 +520,8 @@ def mix_chunk(events, frames, fps, audio_path=None):
     ref = 0.5 if voice_sig is None else 1.0 * float(np.percentile(np.abs(voice_sig), 99.5) + 1e-6)
     sfx = np.zeros((n, 2))
     for e in events:
+        if e["kind"] == "cut" and not CUT_SOUND:
+            continue
         s = synth_event(e, rng)
         i0 = int(e["t"] * SR)
         if i0 >= n:
