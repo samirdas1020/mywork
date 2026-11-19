@@ -23,9 +23,10 @@ jobs:
           DRIVE_ZIP: ${{ inputs.drive_zip }}
         run: |
           pip install gdown
-          gdown --fuzzy "$DRIVE_ZIP" -O inputs.zip
+          gdown "$DRIVE_ZIP" -O inputs.zip
           unzip -o inputs.zip -d render_input
           ls -la render_input
+
       - id: p
         name: Find scene files
         run: |
