@@ -22,11 +22,22 @@ jobs:
         env:
           DRIVE_ZIP: ${{ inputs.drive_zip }}
         run: |
-          pip install gdown
-          gdown "$DRIVE_ZIP" -O inputs.zip
+          mkdir -p render_input
+          FILE_ID=$(echo "$DRIVE_ZIP" | sed -n 's/.*[?&]id=\([^&]*\).*/\1/p')
+          if [ -z "$FILE_ID" ]; then
+            FILE_ID=$(echo "$DRIVE_ZIP" | sed -n 's/.*\/d\/\([^\/]*\).*/\1/p')
+          fi
+          if [ -n "$FILE_ID" ]; then
+            curl -L -c cookies.txt "https://drive.google.com/uc?export=download&id=${FILE_ID}" -o inputs.zip
+            CONFIRM=$(sed -n 's/.*confirm=\([0-9A-Za-z_]*\).*/\1/p' inputs.zip | head -n 1)
+            if [ -n "$CONFIRM" ]; then
+              curl -L -b cookies.txt "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILE_ID}" -o inputs.zip
+            fi
+          else
+            curl -L "$DRIVE_ZIP" -o inputs.zip
+          fi
           unzip -o inputs.zip -d render_input
           ls -la render_input
-
       - id: p
         name: Find scene files
         run: |
@@ -51,8 +62,20 @@ jobs:
         env:
           DRIVE_ZIP: ${{ inputs.drive_zip }}
         run: |
-          pip install gdown
-          gdown --fuzzy "$DRIVE_ZIP" -O inputs.zip
+          mkdir -p render_input
+          FILE_ID=$(echo "$DRIVE_ZIP" | sed -n 's/.*[?&]id=\([^&]*\).*/\1/p')
+          if [ -z "$FILE_ID" ]; then
+            FILE_ID=$(echo "$DRIVE_ZIP" | sed -n 's/.*\/d\/\([^\/]*\).*/\1/p')
+          fi
+          if [ -n "$FILE_ID" ]; then
+            curl -L -c cookies.txt "https://drive.google.com/uc?export=download&id=${FILE_ID}" -o inputs.zip
+            CONFIRM=$(sed -n 's/.*confirm=\([0-9A-Za-z_]*\).*/\1/p' inputs.zip | head -n 1)
+            if [ -n "$CONFIRM" ]; then
+              curl -L -b cookies.txt "https://drive.google.com/uc?export=download&confirm=${CONFIRM}&id=${FILE_ID}" -o inputs.zip
+            fi
+          else
+            curl -L "$DRIVE_ZIP" -o inputs.zip
+          fi
           unzip -o inputs.zip -d render_input
       - name: Install Dependencies
         run: |
