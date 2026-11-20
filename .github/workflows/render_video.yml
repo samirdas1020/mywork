@@ -55,8 +55,8 @@ jobs:
           unzip -o inputs.zip -d render_input
       - name: Install Dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install playwright
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+          pip install playwright numpy pillow
           playwright install --with-deps chromium
           ffmpeg -version | head -1
       - name: Render Chunk
@@ -66,20 +66,27 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: clip-${{ matrix.chunk }}
-          path: clips/synced_${{ matrix.chunk }}.mp4
+          path: |
+            clips/synced_${{ matrix.chunk }}.mp4
+            clips/sfx_${{ matrix.chunk }}.json
 
   merge:
     needs: render
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - uses: actions/download-artifact@v4
         with:
           pattern: clip-*
           merge-multiple: true
           path: clips
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install ffmpeg + numpy
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+          pip install numpy
       - name: Merge Clips
         run: python render_scenes.py merge
       - name: Upload Final Video to Drive
