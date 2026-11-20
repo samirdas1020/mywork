@@ -79,6 +79,8 @@ def analyze(page, step_js, frames, fps):
 # ---------------------------------------------------------------- 2. event detection
 # Per-kind weights are taste knobs for the mix, NOT detection rules.
 CUT_SOUND = False  # False = no sound at shot changes (cuts still steer the music beat)
+PITCHED = False  # False = no tonal sounds at all (bell / ping / clink / marimba / wood knock)
+PITCHED_KINDS = ("appear", "text", "bounce", "stop")
 WHOOSH = False  # True = use swept-noise whoosh for cuts/jumps; False = soft thump / pop
 PRIOR = dict(cut=1.0, appear=0.7, text=0.9, jump=0.8, stop=0.9, bounce=1.0, shake=0.8)
 
@@ -86,6 +88,11 @@ PRIOR = dict(cut=1.0, appear=0.7, text=0.9, jump=0.8, stop=0.9, bounce=1.0, shak
 def _loud(raw):
     """raw 0..1 -> loudness 0..1 on a dB scale (-54 dB .. 0 dB); hearing is logarithmic."""
     return float(np.clip((20 * np.log10(max(raw, 1e-6)) + 54) / 54, 0, 1))
+
+
+def _silent(e):
+    """Events that stay detected (they still steer the music) but make no sound."""
+    return (e["kind"] == "cut" and not CUT_SOUND) or (e["kind"] in PITCHED_KINDS and not PITCHED)
 
 
 def _mad(x):
@@ -270,7 +277,7 @@ def select(events, dur_s):
     keep = []
     for e in cand:
         if e["kind"] == "shake" or all(
-                k["kind"] == "shake" or (k["kind"] == "cut" and not CUT_SOUND) or abs(e["t"] - k["t"]) >= 0.15 + 0.45 * max(e["I"], k["I"])
+                k["kind"] == "shake" or _silent(k) or abs(e["t"] - k["t"]) >= 0.15 + 0.45 * max(e["I"], k["I"])
                 for k in keep):
             keep.append(e)
     keep.sort(key=lambda e: e["t"])
@@ -520,7 +527,7 @@ def mix_chunk(events, frames, fps, audio_path=None):
     ref = 0.5 if voice_sig is None else 1.0 * float(np.percentile(np.abs(voice_sig), 99.5) + 1e-6)
     sfx = np.zeros((n, 2))
     for e in events:
-        if e["kind"] == "cut" and not CUT_SOUND:
+        if _silent(e):
             continue
         s = synth_event(e, rng)
         i0 = int(e["t"] * SR)
