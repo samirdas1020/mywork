@@ -102,9 +102,9 @@ def _mad(x):
 
 def _shake_segments(gx, gy, fps):
     F = len(gx)
-    e = np.hypot(gx, gy)
+    e = np.sqrt(_box(np.hypot(gx, gy) ** 2, 5))          # 5-frame RMS: robust to aliasing dips
     med, mad = _mad(e)
-    thr = med + 5 * max(mad, 2.0)                       # 2px = render noise floor
+    thr = med + 5 * max(mad, 0.6)                       # 0.6px = render noise floor
     hot = e > thr
     sx, sy = np.sign(gx), np.sign(gy)
     flip = np.zeros(F, bool)
@@ -630,13 +630,16 @@ def make_music(total, cuts, accents, times, feats):
     bpm = float(bpms[np.argmin(cost + 0.002 * np.abs(bpms - target))])
     minor = (feats["lum"] + 0.35 * feats["warm"]) < 0.42
     scale = MINOR if minor else MAJOR
-    prog = (PROG_MINOR if minor else PROG_MAJOR)[int(rng.integers(0, 4))]
+    plist = PROG_MINOR if minor else PROG_MAJOR
+    first = int(rng.integers(0, 4))
     root = 45 + int(rng.integers(0, 12))
     beat_s = 60.0 / bpm
     bar = 4 * beat_s
     nb = int(np.ceil(total / bar)) + 1
     N = int((nb * bar + 1) * SR)
-    L, R = np.zeros(N), np.zeros(N)
+    L, R = np.zeros(N, np.float32), np.zeros(N, np.float32)
+    more = [int(x) for x in rng.integers(0, 4, size=nb // 32)]  # new progression every 32 bars (long videos)
+    progs = [plist[first]] + [plist[m] for m in more]
 
     cnt = np.histogram(times, bins=np.arange(0, nb + 1) * bar)[0].astype(float)
     cnt = np.convolve(cnt, [0.25, 0.5, 0.25], "same")
@@ -659,7 +662,7 @@ def make_music(total, cuts, accents, times, feats):
         return s * np.clip(1 - t / dur, 0, 1) ** power
 
     for b in range(nb):
-        d0 = prog[b % 4]
+        d0 = progs[b // 32][b % 4]
         e = energy[b] if b < len(energy) else 0.3
         t0 = b * bar
         # pad: detuned stacked harmonics, hann-shaped, left/right slightly different
