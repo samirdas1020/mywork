@@ -142,7 +142,7 @@ def render(i):
             "-i", video,
             "-f", "f32le", "-ar", str(sfx_engine.SR), "-ac", "2", "-i", "-",
             "-map", "0:v", "-map", "1:a",
-            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest",
             final,
         ],
         input=mixed.tobytes(),
@@ -190,7 +190,7 @@ def merge():
     for p in files:
       f.write(f"file '{os.path.abspath(p)}'\n")
 
-  has_meta = SFX and MUSIC and any(
+  has_meta = SFX and any(
       os.path.exists(f"{OUT_DIR}/sfx_{os.path.basename(p).split('_')[1].split('.')[0]}.json")
       for p in files
   )
@@ -201,7 +201,7 @@ def merge():
           "ffmpeg", "-y", "-loglevel", "error",
           "-f", "concat", "-safe", "0", "-i", "concat.txt",
           "-c:v", "copy",
-      ] + (["-c:a", "copy"] if has_meta else ["-c:a", "aac", "-b:a", "192k"]) + [
+      ] + (["-an"] if has_meta else ["-c:a", "aac", "-b:a", "192k"]) + [
           "-movflags", "+faststart",
           tmp,
       ],
@@ -209,32 +209,39 @@ def merge():
   )
 
   if has_meta:
-    durs = [
-        float(subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-             "-of", "csv=p=0", p],
-            capture_output=True, text=True, check=True).stdout.strip())
-        for p in files
-    ]
-    cuts, accents, times, feats = sfx_engine.collect(OUT_DIR, files, durs)
-    bgm, info = sfx_engine.make_music(sum(durs) + 0.5, cuts, accents, times, feats)
-    print(f"Music: {info['bpm']} BPM, {'minor' if info['minor'] else 'major'}", flush=True)
-    sfx_engine.write_wav(f"{OUT_DIR}/bgm.wav", bgm)
-    subprocess.run(
-        [
-            "ffmpeg", "-y", "-loglevel", "error",
-            "-i", tmp, "-i", f"{OUT_DIR}/bgm.wav",
-            "-filter_complex",
-            "[0:a]asplit=2[vo][sc];[1:a]volume=0.5[bg];"
-            "[bg][sc]sidechaincompress=threshold=0.04:ratio=8:attack=15:release=350[duck];"
-            "[vo][duck]amix=inputs=2:duration=first[m];"
-            "[m]loudnorm=I=-14:TP=-1.5:LRA=11,asoftclip=type=tanh:threshold=0.85[a]",
-            "-map", "0:v", "-map", "[a]",
-            "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest",
-            "-movflags", "+faststart", out,
-        ],
-        check=True,
-    )
+    # sample-exact voice track: each clip's audio is decoded alone and fitted to its video length
+    durs = sfx_engine.join_voice(files, f"{OUT_DIR}/voice_all.wav")
+    if MUSIC:
+      cuts, accents, times, feats = sfx_engine.collect(OUT_DIR, files, durs)
+      bgm, info = sfx_engine.make_music(sum(durs) + 0.5, cuts, accents, times, feats)
+      print(f"Music: {info['bpm']} BPM, {'minor' if info['minor'] else 'major'}", flush=True)
+      sfx_engine.write_wav(f"{OUT_DIR}/bgm.wav", bgm)
+      subprocess.run(
+          [
+              "ffmpeg", "-y", "-loglevel", "error",
+              "-i", tmp, "-i", f"{OUT_DIR}/voice_all.wav", "-i", f"{OUT_DIR}/bgm.wav",
+              "-filter_complex",
+              "[1:a]asplit=2[vo][sc];[2:a]volume=0.28[bg];"
+              "[bg][sc]sidechaincompress=threshold=0.04:ratio=8:attack=15:release=350[duck];"
+              "[vo][duck]amix=inputs=2:duration=first[m];"
+              "[m]loudnorm=I=-14:TP=-1.5:LRA=11,asoftclip=type=tanh:threshold=0.85[a]",
+              "-map", "0:v", "-map", "[a]",
+              "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest",
+              "-movflags", "+faststart", out,
+          ],
+          check=True,
+      )
+    else:  # sound effects only: same sample-exact voice track, no music, no loudness change
+      subprocess.run(
+          [
+              "ffmpeg", "-y", "-loglevel", "error",
+              "-i", tmp, "-i", f"{OUT_DIR}/voice_all.wav",
+              "-map", "0:v", "-map", "1:a",
+              "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest",
+              "-movflags", "+faststart", out,
+          ],
+          check=True,
+      )
     os.remove(tmp)
   print(f"Merged {len(files)} clips -> {out} (1080x1920)", flush=True)
 
