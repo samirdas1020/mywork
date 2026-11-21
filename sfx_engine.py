@@ -582,10 +582,12 @@ def join_voice(files, out_wav):
         w.setsampwidth(2)
         w.setframerate(SR)
         for p in files:
-            vd = float(subprocess.run(
+            out = subprocess.run(
                 ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
-                 "stream=duration", "-of", "csv=p=0", p],
-                capture_output=True, text=True, check=True).stdout.strip())
+                 "stream=duration", "-of", "default=noprint_wrappers=1:nokey=1", p],
+                capture_output=True, text=True, check=True).stdout
+            # newer ffprobe versions can add stray commas / extra lines: take the first number only
+            vd = float(out.replace(",", " ").split()[0])
             durs.append(vd)
             target = int(round(sum(durs) * SR)) - pos
             raw = subprocess.run(["ffmpeg", "-v", "error", "-i", p, "-f", "f32le", "-ac", "2",
