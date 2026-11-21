@@ -570,6 +570,34 @@ def save_meta(path, events, colors, duration):
               open(path, "w"), indent=1)
 
 
+def join_voice(files, out_wav):
+    """Sample-exact voice track for the whole video.
+
+    Every clip's audio is decoded on its own (so AAC priming/padding can never accumulate) and
+    fitted to that clip's video length; lengths are rounded cumulatively, so there is no drift.
+    Returns the list of per-clip video durations (seconds)."""
+    durs, pos = [], 0
+    with wave.open(out_wav, "wb") as w:
+        w.setnchannels(2)
+        w.setsampwidth(2)
+        w.setframerate(SR)
+        for p in files:
+            vd = float(subprocess.run(
+                ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries",
+                 "stream=duration", "-of", "csv=p=0", p],
+                capture_output=True, text=True, check=True).stdout.strip())
+            durs.append(vd)
+            target = int(round(sum(durs) * SR)) - pos
+            raw = subprocess.run(["ffmpeg", "-v", "error", "-i", p, "-f", "f32le", "-ac", "2",
+                                  "-ar", str(SR), "-"], capture_output=True).stdout
+            a = np.frombuffer(raw, "<f4").reshape(-1, 2)[:target]
+            if len(a) < target:
+                a = np.vstack([a, np.zeros((target - len(a), 2), np.float32)])
+            w.writeframes((np.clip(a, -1, 1) * 32767).astype("<i2").tobytes())
+            pos += target
+    return durs
+
+
 def write_wav(path, stereo):
     pcm = (np.clip(stereo, -1, 1) * 32767).astype("<i2")
     with wave.open(path, "wb") as w:
