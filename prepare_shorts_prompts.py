@@ -34,7 +34,7 @@ CRITICAL STUDIO QUALITY & SHOT RULES:
    - In `window.updateSceneTime(t_ms)`, strictly cut between shots (`display: none` vs `inline`) synced to the Timed Sequence so the scene changes every 4-5 seconds.
 
 2. VERTICAL FRAMING & VIRTUAL CAMERA (9:16 SAFE ZONE):
-   - Compose scenes vertically (`720x1280`): keep main characters and titles centered between X: 60 to 600 and Y: 200 to 980 so YouTube Shorts UI buttons never cover important details.
+   - Compose scenes vertically (`720x1280`): keep main characters centered between X: 60 to 600 and Y: 200 to 980 so YouTube Shorts UI buttons never cover important details.
    - Even while a shot is active, apply continuous slow camera motion (slow zoom-in, vertical/horizontal pan, or dramatic shake during impacts) by updating `<g>` transforms using `t_ms`.
    - Include ambient motion in every shot: drifting clouds/smoke, waving banners, flickering torches, or marching silhouettes.
 
@@ -52,7 +52,7 @@ CRITICAL STUDIO QUALITY & SHOT RULES:
 
 5. VISUAL POLISH & TYPOGRAPHY:
    - Rich color palettes with `<linearGradient>`, `<radialGradient>`, drop shadows, and bold `3px-4px` dark outlines (`#1a1a2e`) on characters.
-   - NO subtitles. Use bold cinematic on-screen titles/labels (max 4 words: dates, locations, troop numbers) only when relevant cues hit.
+   - NO subtitles.
 
 6. OUTPUT:
    - Output ONLY the standalone HTML code wrapped inside a single ```html ... ``` block. No explanations.
