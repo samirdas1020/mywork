@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 import sfx_engine  # dynamic SFX + music (numpy)
+import captions  # one-word-at-a-time English captions
 
 FPS = 30  # শর্টসের জন্য 30 FPS স্মুথ হবে
 WIDTH, HEIGHT = 720, 1280
@@ -14,6 +15,7 @@ IN_DIR = "render_input"  # scene_N.html, audio_N.mp3, chunks.json
 OUT_DIR = "clips"
 SFX = os.environ.get("SHORTS_SFX", "1") != "0"  # scene-driven sound effects
 MUSIC = os.environ.get("SHORTS_MUSIC", "1") != "0"  # scene-driven background music (merge step)
+CAPTIONS = os.environ.get("SHORTS_CAPTIONS", "1") != "0"  # burned-in word captions
 
 # Freeze every kind of animation at time t, then let the page draw that moment.
 STEP_JS = """t => {
@@ -110,9 +112,26 @@ def render(i):
       page.goto("file://" + scene, wait_until="load")  # fresh page for the real render
       page.wait_for_timeout(500)
 
+    caps, last_cap = None, None
+    if CAPTIONS:
+      try:  # word timings from words_N.json or Whisper; drawn into the page below
+        caps = captions.build(audio, f"{IN_DIR}/words_{i}.json", duration)
+        if caps:
+          page.evaluate(captions.SETUP_JS)
+          print(f"  Captions: {caps.n} words", flush=True)
+        else:
+          print("  Captions: no words found, skipped", flush=True)
+      except Exception as ex:
+        print("!! Captions skipped:", ex, flush=True)
+
     for f in range(frames):
       t = f * 1000.0 / FPS
       page.evaluate(STEP_JS, t)
+      if caps:
+        st = caps.at(t / 1000.0)
+        if st != last_cap:
+          page.evaluate(captions.SET_JS, st)
+          last_cap = st
       img = page.screenshot(type="jpeg", quality=95)
       ff.stdin.write(img)
       if f % 5 == 0:
