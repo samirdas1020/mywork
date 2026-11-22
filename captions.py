@@ -12,7 +12,7 @@ import bisect, json, os, re
 import numpy as np
 
 # ---------------------------------------------------------------- in-page drawing
-FONT_PX = 59        # caption size on the 720x1280 canvas (was 118). Change ONLY this to resize.
+FONT_PX = 50        # caption size on the 720x1280 canvas (was 118). Change ONLY this to resize.
 BOTTOM_PCT = 24     # distance from the bottom edge, in % of the height
 
 SETUP_JS = r"""() => {
