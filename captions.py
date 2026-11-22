@@ -12,20 +12,26 @@ import bisect, json, os, re
 import numpy as np
 
 # ---------------------------------------------------------------- in-page drawing
+FONT_PX = 59        # caption size on the 720x1280 canvas (was 118). Change ONLY this to resize.
+BOTTOM_PCT = 24     # distance from the bottom edge, in % of the height
+
 SETUP_JS = r"""() => {
   if (document.getElementById('__cap')) return;
   const el = document.createElement('div');
   el.id = '__cap';
-  el.style.cssText = 'position:fixed;left:50%;bottom:24%;transform:translateX(-50%);z-index:2147483647;' +
+  el.style.cssText = 'position:fixed;left:50%;bottom:__BOTTOM__%;transform:translateX(-50%);z-index:2147483647;' +
     'display:none;pointer-events:none;white-space:nowrap;text-align:center;';
   const sp = document.createElement('span');
   sp.style.cssText = 'font-family:Montserrat,Poppins,"Arial Black",Impact,"Liberation Sans",Arial,sans-serif;' +
-    'font-weight:900;font-size:118px;line-height:1.1;text-transform:uppercase;letter-spacing:0.01em;' +
-    'color:#fff;-webkit-text-stroke:16px #000;paint-order:stroke fill;' +
-    'text-shadow:0 8px 0 rgba(0,0,0,0.55);';
+    'font-weight:900;font-size:__FONT__px;line-height:1.1;text-transform:uppercase;letter-spacing:0.01em;' +
+    'color:#fff;-webkit-text-stroke:__STROKE__px #000;paint-order:stroke fill;' +
+    'text-shadow:0 __SHADOW__px 0 rgba(0,0,0,0.55);';
   el.appendChild(sp);
   (document.body || document.documentElement).appendChild(el);
 }"""
+
+SETUP_JS = (SETUP_JS.replace('__FONT__', str(FONT_PX)).replace('__BOTTOM__', str(BOTTOM_PCT))
+            .replace('__STROKE__', str(round(FONT_PX * 0.135, 1))).replace('__SHADOW__', str(round(FONT_PX * 0.068, 1))))
 
 # a = null (hide)  or  [text, accent(bool), scale]
 SET_JS = r"""(a) => {
