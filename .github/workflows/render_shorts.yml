@@ -55,10 +55,15 @@ jobs:
           unzip -o inputs.zip -d render_input
       - name: Install Dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install playwright numpy pillow
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg fonts-montserrat
+          pip install playwright numpy pillow faster-whisper
           playwright install --with-deps chromium
           ffmpeg -version | head -1
+      - name: Cache Whisper model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: whisper-base-en-v1
       - name: Render Shorts Chunk
         env:
           PYTHONUNBUFFERED: "1"
@@ -85,7 +90,7 @@ jobs:
           path: clips
       - name: Install ffmpeg + numpy
         run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
           pip install numpy
       - name: Merge Clips
         run: python render_shorts_scenes.py merge
