@@ -56,7 +56,7 @@ CRITICAL STUDIO QUALITY & SHOT RULES:
 
 6. AUTO SOUND EFFECTS (CRITICAL):
    - Inside the `<head>` of your HTML, you MUST include a JSON block defining the exact sound effects needed for the visual actions you created.
-   - Format exactly like this: `<script id="sfx-data" type="application/json">[{"time_ms": 1500, "prompt": "sharp sword clash"}, {"time_ms": 4200, "prompt": "cannon fire"}]</script>`
+   - Format exactly like this: `<script id="sfx-data" type="application/json">[{{ "time_ms": 1500, "prompt": "sharp sword clash" }}, {{ "time_ms": 4200, "prompt": "cannon fire" }}]</script>`
    - The `time_ms` MUST perfectly match the visual actions driven by your `window.updateSceneTime` function.
 
 7. OUTPUT:
