@@ -1,6 +1,7 @@
 import json
 import os
 import requests
+import time
 
 AUDIO_FILE = "input_audio.mp3"
 OUT = "prompts_output"
@@ -11,7 +12,7 @@ def build_cartoon_rigging_prompt(scene_text, duration, timeline="", chunk_idx=0)
   duration_ms = int(duration * 1000)
   min_shots = max(4, int(round(duration / 5.0)))
 
-  return f"""
+  return f'''
 You are an elite 2D Vector Animation Director (OverSimplified / Kurzgesagt studio quality). Build a complete, self-contained HTML5 file (`<!DOCTYPE html>`) with rich, cinematic, fast-paced multi-shot 9:16 VERTICAL vector animation for YouTube Shorts.
 
 Clip Index: Part {chunk_idx + 1}
@@ -61,7 +62,7 @@ CRITICAL STUDIO QUALITY & SHOT RULES:
 
 7. OUTPUT:
    - Output ONLY the standalone HTML code wrapped inside a single ```html ... ``` block. No explanations.
-""".strip()
+'''.strip()
 
 def build_timeline(chunk_segments, chunk_start, chunk_duration):
   lines = []
@@ -83,7 +84,7 @@ def build_timeline(chunk_segments, chunk_start, chunk_duration):
         f"[{current_pos:.1f}s - {chunk_duration:.1f}s] Visual Hold: Dramatic reaction & transition zoom"
     )
 
-  return "\n".join(lines)
+  return "\\n".join(lines)
 
 
 def generate_ai_bgm(prompt_text, output_filename="background_music.mp3"):
@@ -97,20 +98,29 @@ def generate_ai_bgm(prompt_text, output_filename="background_music.mp3"):
         
     headers = {"Authorization": f"Bearer {hf_token}"}
     
-    try:
-        response = requests.post(API_URL, headers=headers, json={"inputs": prompt_text})
-        if response.status_code == 200:
-            with open(output_filename, "wb") as f:
-                f.write(response.content)
-            print("Background music successfully generated!", flush=True)
-            return True
-        else:
-            print(f"Failed to generate music: {response.text}", flush=True)
-            return False
-    except Exception as e:
-        print(f"Error generating BGM: {e}", flush=True)
-        return False
-
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(API_URL, headers=headers, json={"inputs": prompt_text}, timeout=60)
+            if response.status_code == 200:
+                with open(output_filename, "wb") as f:
+                    f.write(response.content)
+                print("Background music successfully generated!", flush=True)
+                return True
+            else:
+                print(f"Attempt {attempt+1} failed: {response.text}", flush=True)
+                if "loading" in response.text.lower():
+                     print("Model is loading, waiting 20 seconds before retry...", flush=True)
+                     time.sleep(20)
+                else:
+                    return False
+        except requests.exceptions.RequestException as e:
+            print(f"Attempt {attempt+1} - Connection error: {e}", flush=True)
+            if attempt < max_retries - 1:
+                time.sleep(5)
+            else:
+                return False
+    return False
 
 def main():
   from faster_whisper import WhisperModel
@@ -140,6 +150,8 @@ def main():
           print("BGM Mixed successfully!", flush=True)
       except Exception as e:
           print(f"Error mixing BGM: {e}", flush=True)
+  else:
+      print("Proceeding without BGM due to generation failure.", flush=True)
   # ------------------------------------
 
   total = len(audio) / 1000.0
@@ -194,7 +206,7 @@ def main():
 
     with open(f"{OUT}/prompt_{i}.txt", "w", encoding="utf-8") as f:
       f.write(prompt)
-    combined.append(f"===== PROMPT {i} =====\n{prompt}\n")
+    combined.append(f"===== PROMPT {i} =====\\n{prompt}\\n")
 
     meta.append({
         "index": i,
@@ -205,7 +217,7 @@ def main():
     print(f"Chunk {i}: {duration:.1f}s | {text[:60]}...", flush=True)
 
   with open(f"{OUT}/all_prompts.txt", "w", encoding="utf-8") as f:
-    f.write("\n\n".join(combined))
+    f.write("\\n\\n".join(combined))
   with open(f"{OUT}/chunks.json", "w", encoding="utf-8") as f:
     json.dump(meta, f, ensure_ascii=False, indent=2)
 
