@@ -34,7 +34,7 @@ jobs:
           AUDIO_INPUT: ${{ github.event.inputs.audio_drive_input }}
         run: |
           if [ -n "$AUDIO_INPUT" ]; then
-            gdown --fuzzy "$AUDIO_INPUT" -O input_audio.mp3
+            gdown "$AUDIO_INPUT" -O input_audio.mp3
           elif [ ! -f "input_audio.mp3" ]; then
             echo "Error: No audio_drive_input provided and input_audio.mp3 not found in repo."
             exit 1
