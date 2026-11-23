@@ -1,19 +1,13 @@
 import json
 import os
 import time
-import requests
 
 AUDIO_FILE = "input_audio.mp3"
 OUT = "prompts_output"
 TARGET_CHUNK_SEC = 30.0
 WIDTH, HEIGHT = 720, 1280
 
-HF_ROUTER_BASE = "https://router.huggingface.co/hf-inference/models"
-BGM_MODELS = [
-    "cvssp/audioldm2",
-    "cvssp/audioldm-s-full-v2",
-    "facebook/musicgen-small",
-]
+HF_MUSICGEN_SPACE = "facebook/MusicGen"
 
 
 def build_cartoon_rigging_prompt(scene_text, duration, timeline="", chunk_idx=0):
@@ -96,47 +90,25 @@ def build_timeline(chunk_segments, chunk_start, chunk_duration):
   return "\n".join(lines)
 
 
-def generate_ai_bgm(prompt_text, output_filename="background_music.mp3"):
-  hf_token = os.environ.get("HF_TOKEN", "").strip()
-  if not hf_token:
-    print("Error: HF_TOKEN not found in environment.", flush=True)
-    return False
+def generate_space_bgm(prompt_text, output_filename="background_music.mp3"):
+  from gradio_client import Client
+  from pydub import AudioSegment
 
-  headers = {
-      "Authorization": f"Bearer {hf_token}",
-      "Content-Type": "application/json",
-  }
+  hf_token = os.environ.get("HF_TOKEN", "").strip() or None
+  print(f"Generating BGM via HF Space '{HF_MUSICGEN_SPACE}'...", flush=True)
 
-  for model_id in BGM_MODELS:
-    api_url = f"{HF_ROUTER_BASE}/{model_id}"
-    print(f"Trying HF Router model '{model_id}' for BGM...", flush=True)
-    for attempt in range(3):
-      try:
-        response = requests.post(
-            api_url, headers=headers, json={"inputs": prompt_text}, timeout=90
-        )
-        ctype = response.headers.get("Content-Type", "")
-        if response.status_code == 200 and (
-            "audio" in ctype or len(response.content) > 2000
-        ):
-          with open(output_filename, "wb") as f:
-            f.write(response.content)
-          print(f"BGM generated successfully using '{model_id}'!", flush=True)
-          return True
-        print(
-            f"Model '{model_id}' attempt {attempt + 1} status {response.status_code}:"
-            f" {response.text[:200]}",
-            flush=True,
-        )
-        if response.status_code == 503:
-          time.sleep(15)
-        elif response.status_code in (400, 404, 410):
-          break
-        else:
-          time.sleep(5)
-      except requests.exceptions.RequestException as e:
-        print(f"Model '{model_id}' attempt {attempt + 1} error: {e}", flush=True)
-        time.sleep(5)
+  for attempt in range(2):
+    try:
+      client = Client(HF_MUSICGEN_SPACE, hf_token=hf_token)
+      result = client.predict(prompt_text, None, api_name="/predict")
+      wav_path = result[0] if isinstance(result, (list, tuple)) else result
+      if wav_path and os.path.exists(wav_path):
+        AudioSegment.from_file(wav_path).export(output_filename, format="mp3")
+        print("BGM generated successfully via HF Space!", flush=True)
+        return True
+    except Exception as e:
+      print(f"HF Space attempt {attempt + 1} failed: {e}", flush=True)
+      time.sleep(5)
 
   return False
 
@@ -149,19 +121,16 @@ def main():
   print(f"Loading {AUDIO_FILE} ...", flush=True)
   audio = AudioSegment.from_file(AUDIO_FILE)
 
-  # --- AUTO BGM GENERATION & MIXING (HF ONLY) ---
   bgm_file = "background_music.mp3"
   music_prompt = (
       "Epic historical documentary background music, cinematic orchestra,"
       " fast-paced, suspenseful, no vocals"
   )
 
-  if generate_ai_bgm(music_prompt, bgm_file):
+  if generate_space_bgm(music_prompt, bgm_file):
     try:
       print("Mixing Background Music with voiceover...", flush=True)
-      bgm = AudioSegment.from_file(bgm_file)
-      bgm = bgm - 16
-
+      bgm = AudioSegment.from_file(bgm_file) - 16
       loops_needed = int(len(audio) / len(bgm)) + 1
       bgm_looped = (bgm * loops_needed)[: len(audio)]
       audio = audio.overlay(bgm_looped)
@@ -169,8 +138,7 @@ def main():
     except Exception as e:
       print(f"Error mixing BGM: {e}", flush=True)
   else:
-    print("BGM generation failed on Hugging Face.", flush=True)
-  # ---------------------------------------------
+    print("BGM generation failed on HF Space.", flush=True)
 
   total = len(audio) / 1000.0
   target_chunks = max(1, round(total / TARGET_CHUNK_SEC))
