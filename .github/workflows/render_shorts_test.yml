@@ -84,10 +84,10 @@ jobs:
           pattern: shorts-clip-*
           merge-multiple: true
           path: clips
-      - name: Install ffmpeg
+      - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install numpy
+          pip install numpy scipy pydub
       - name: Merge Clips
         run: python render_vector_shorts.py merge
       - name: Upload Final Shorts to Drive
