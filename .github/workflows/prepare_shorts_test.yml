@@ -27,7 +27,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install faster-whisper pydub gdown requests
+          pip install faster-whisper pydub gdown requests numpy scipy
 
       - name: Download Audio from Drive
         env:
