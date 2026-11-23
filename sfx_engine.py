@@ -78,6 +78,8 @@ def analyze(page, step_js, frames, fps):
 
 # ---------------------------------------------------------------- 2. event detection
 # Per-kind weights are taste knobs for the mix, NOT detection rules.
+MUSIC_PERCUSSION = os.environ.get("MUSIC_PERCUSSION", "0") == "1"  # False = smooth ambient music: no kick / clap / hats / plucked notes
+SFX_SOUNDS = os.environ.get("SFX_SOUNDS", "0") == "1"  # False = NO sound effects at all (events still steer the music)
 CUT_SOUND = False  # False = no sound at shot changes (cuts still steer the music beat)
 PITCHED = False  # False = no tonal sounds at all (bell / ping / clink / marimba / wood knock)
 PITCHED_KINDS = ("appear", "text", "bounce", "stop")
@@ -92,6 +94,8 @@ def _loud(raw):
 
 def _silent(e):
     """Events that stay detected (they still steer the music) but make no sound."""
+    if not SFX_SOUNDS:
+        return True
     return (e["kind"] == "cut" and not CUT_SOUND) or (e["kind"] in PITCHED_KINDS and not PITCHED)
 
 
@@ -102,7 +106,8 @@ def _mad(x):
 
 def _shake_segments(gx, gy, fps):
     F = len(gx)
-    e = np.sqrt(_box(np.hypot(gx, gy) ** 2, 5))          # 5-frame RMS: robust to aliasing dips
+    raw = np.hypot(gx, gy)
+    e = np.sqrt(_box(raw ** 2, 5))                       # 5-frame RMS: robust to aliasing dips
     med, mad = _mad(e)
     thr = med + 5 * max(mad, 0.6)                       # 0.6px = render noise floor
     hot = e > thr
@@ -119,6 +124,8 @@ def _shake_segments(gx, gy, fps):
             if hot[f]:
                 last = f
             f += 1
+        while s < last and raw[s] < 0.5 * thr:           # smoothing blurs the start: snap to the real one
+            s += 1
         n = last - s + 1
         if n >= 6 and flip[s:last + 1].sum() >= 0.3 * n:
             segs.append((s, last, float(np.sqrt(np.mean(e[s:last + 1] ** 2))),
@@ -704,9 +711,15 @@ def make_music(total, cuts, accents, times, feats):
                 f = _note(deg_midi(d0 + kk, root + 12)) * det
                 pad += sum(np.sin(2 * np.pi * f * (h + 1) * tt) * a
                            for h, a in enumerate((1, .5, .25, .12)))
-            pad = pad / np.abs(pad).max() * hann * 0.35
+            pad = pad / np.abs(pad).max() * hann * (0.30 + 0.12 * e)
             (L if side == 0 else R)[int(t0 * SR):int(t0 * SR) + len(pad)] += \
                 pad[:N - int(t0 * SR)]
+        fb = _note(deg_midi(d0, root - 12))
+        if not MUSIC_PERCUSSION:                          # smooth: one slow, soft bass note per bar
+            tb = np.arange(int(bar * 1.1 * SR)) / SR
+            swell = np.clip(np.sin(np.pi * tb / tb[-1]), 0, None) ** 1.2
+            add((np.sin(2 * np.pi * fb * tb) + 0.3 * np.sin(4 * np.pi * fb * tb)) * swell, t0, 0.32)
+            continue
         # bass
         fb = _note(deg_midi(d0, root - 12))
         for bt in ([0, 2] + ([2.5] if e > 0.5 else [])):
