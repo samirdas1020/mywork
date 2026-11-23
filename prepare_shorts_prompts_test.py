@@ -1,5 +1,4 @@
-with open("prepare_shorts_prompts_test.py", "w", encoding="utf-8") as f1:
-    f1.write("""import json
+import json
 import os
 import requests
 
@@ -12,7 +11,7 @@ def build_cartoon_rigging_prompt(scene_text, duration, timeline="", chunk_idx=0)
   duration_ms = int(duration * 1000)
   min_shots = max(4, int(round(duration / 5.0)))
 
-  return f'''
+  return f"""
 You are an elite 2D Vector Animation Director (OverSimplified / Kurzgesagt studio quality). Build a complete, self-contained HTML5 file (`<!DOCTYPE html>`) with rich, cinematic, fast-paced multi-shot 9:16 VERTICAL vector animation for YouTube Shorts.
 
 Clip Index: Part {chunk_idx + 1}
@@ -62,8 +61,7 @@ CRITICAL STUDIO QUALITY & SHOT RULES:
 
 7. OUTPUT:
    - Output ONLY the standalone HTML code wrapped inside a single ```html ... ``` block. No explanations.
-'''.strip()
-
+""".strip()
 
 def build_timeline(chunk_segments, chunk_start, chunk_duration):
   lines = []
@@ -85,7 +83,7 @@ def build_timeline(chunk_segments, chunk_start, chunk_duration):
         f"[{current_pos:.1f}s - {chunk_duration:.1f}s] Visual Hold: Dramatic reaction & transition zoom"
     )
 
-  return "\\n".join(lines)
+  return "\n".join(lines)
 
 
 def generate_ai_bgm(prompt_text, output_filename="background_music.mp3"):
@@ -196,7 +194,7 @@ def main():
 
     with open(f"{OUT}/prompt_{i}.txt", "w", encoding="utf-8") as f:
       f.write(prompt)
-    combined.append(f"===== PROMPT {i} =====\\n{prompt}\\n")
+    combined.append(f"===== PROMPT {i} =====\n{prompt}\n")
 
     meta.append({
         "index": i,
@@ -207,7 +205,7 @@ def main():
     print(f"Chunk {i}: {duration:.1f}s | {text[:60]}...", flush=True)
 
   with open(f"{OUT}/all_prompts.txt", "w", encoding="utf-8") as f:
-    f.write("\\n\\n".join(combined))
+    f.write("\n\n".join(combined))
   with open(f"{OUT}/chunks.json", "w", encoding="utf-8") as f:
     json.dump(meta, f, ensure_ascii=False, indent=2)
 
@@ -215,5 +213,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-""")
-print("Fixed file created.")
