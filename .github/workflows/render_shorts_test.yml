@@ -23,7 +23,7 @@ jobs:
           DRIVE_ZIP: ${{ inputs.drive_zip }}
         run: |
           pip install gdown
-          gdown --fuzzy "$DRIVE_ZIP" -O inputs.zip
+          gdown "$DRIVE_ZIP" -O inputs.zip
           mkdir -p render_input
           unzip -o inputs.zip -d render_input
           ls -la render_input
@@ -56,7 +56,7 @@ jobs:
           DRIVE_ZIP: ${{ inputs.drive_zip }}
         run: |
           pip install gdown
-          gdown --fuzzy "$DRIVE_ZIP" -O inputs.zip
+          gdown "$DRIVE_ZIP" -O inputs.zip
           mkdir -p render_input
           unzip -o inputs.zip -d render_input
       - name: Install Dependencies
