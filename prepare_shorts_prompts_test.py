@@ -99,8 +99,8 @@ def generate_space_bgm(prompt_text, output_filename="background_music.mp3"):
 
   for attempt in range(2):
     try:
-      client = Client(HF_MUSICGEN_SPACE, hf_token=hf_token)
-      result = client.predict(prompt_text, None, api_name="/predict")
+      client = Client(HF_MUSICGEN_SPACE, token=hf_token)
+      result = client.predict(prompt_text, None)
       wav_path = result[0] if isinstance(result, (list, tuple)) else result
       if wav_path and os.path.exists(wav_path):
         AudioSegment.from_file(wav_path).export(output_filename, format="mp3")
