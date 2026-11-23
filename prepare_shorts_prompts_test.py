@@ -1,18 +1,23 @@
 import json
 import os
-import requests
 import time
+import numpy as np
+import requests
+from scipy.io.wavfile import write as write_wav
 
 AUDIO_FILE = "input_audio.mp3"
 OUT = "prompts_output"
 TARGET_CHUNK_SEC = 30.0
 WIDTH, HEIGHT = 720, 1280
 
+HF_ROUTER_BASE = "https://router.huggingface.co/hf-inference/models"
+
+
 def build_cartoon_rigging_prompt(scene_text, duration, timeline="", chunk_idx=0):
   duration_ms = int(duration * 1000)
   min_shots = max(4, int(round(duration / 5.0)))
 
-  return f'''
+  return f"""
 You are an elite 2D Vector Animation Director (OverSimplified / Kurzgesagt studio quality). Build a complete, self-contained HTML5 file (`<!DOCTYPE html>`) with rich, cinematic, fast-paced multi-shot 9:16 VERTICAL vector animation for YouTube Shorts.
 
 Clip Index: Part {chunk_idx + 1}
@@ -62,7 +67,8 @@ CRITICAL STUDIO QUALITY & SHOT RULES:
 
 7. OUTPUT:
    - Output ONLY the standalone HTML code wrapped inside a single ```html ... ``` block. No explanations.
-'''.strip()
+""".strip()
+
 
 def build_timeline(chunk_segments, chunk_start, chunk_duration):
   lines = []
@@ -84,43 +90,79 @@ def build_timeline(chunk_segments, chunk_start, chunk_duration):
         f"[{current_pos:.1f}s - {chunk_duration:.1f}s] Visual Hold: Dramatic reaction & transition zoom"
     )
 
-  return "\\n".join(lines)
+  return "\n".join(lines)
+
+
+def create_fallback_bgm(output_wav="fallback_bgm.wav", duration_sec=12.0, sr=22050):
+  """API ব্যর্থ হলে সিন্থেসাইজড লো-ভলিউম অ্যাম্বিয়েন্ট মিউজিক তৈরি করে।"""
+  t = np.linspace(0, duration_sec, int(sr * duration_sec), endpoint=False)
+  # D minor / cinematic low drone + pulse
+  f1, f2, f3 = 73.42, 110.0, 146.83
+  pulse = 0.65 + 0.35 * np.sin(2 * np.pi * 2.0 * t)
+  wave = (
+      0.35 * np.sin(2 * np.pi * f1 * t)
+      + 0.25 * np.sin(2 * np.pi * f2 * t + 0.4)
+      + 0.20 * np.sin(2 * np.pi * f3 * t + 0.8)
+  ) * pulse
+  # Soft low-pass smoothing
+  kernel = np.ones(25) / 25.0
+  wave = np.convolve(wave, kernel, mode="same")
+  peak = np.max(np.abs(wave)) or 1.0
+  audio_int16 = np.int16(np.clip(wave / peak * 0.45, -1.0, 1.0) * 32767)
+  write_wav(output_wav, sr, audio_int16)
+  return output_wav
 
 
 def generate_ai_bgm(prompt_text, output_filename="background_music.mp3"):
-    print(f"Generating Auto AI BGM for: {prompt_text}", flush=True)
-    API_URL = "https://api-inference.huggingface.co/models/facebook/musicgen-small"
-    hf_token = os.environ.get("HF_TOKEN", "")
-    
-    if not hf_token:
-        print("Warning: HF_TOKEN not found. Skipping BGM generation.", flush=True)
-        return False
-        
-    headers = {"Authorization": f"Bearer {hf_token}"}
-    
-    max_retries = 3
+  print(f"Generating Auto AI BGM via HF Router for: {prompt_text}", flush=True)
+  api_url = f"{HF_ROUTER_BASE}/facebook/musicgen-small"
+  hf_token = os.environ.get("HF_TOKEN", "").strip()
+
+  if hf_token:
+    headers = {
+        "Authorization": f"Bearer {hf_token}",
+        "Content-Type": "application/json",
+    }
+    max_retries = 2
     for attempt in range(max_retries):
-        try:
-            response = requests.post(API_URL, headers=headers, json={"inputs": prompt_text}, timeout=60)
-            if response.status_code == 200:
-                with open(output_filename, "wb") as f:
-                    f.write(response.content)
-                print("Background music successfully generated!", flush=True)
-                return True
-            else:
-                print(f"Attempt {attempt+1} failed: {response.text}", flush=True)
-                if "loading" in response.text.lower():
-                     print("Model is loading, waiting 20 seconds before retry...", flush=True)
-                     time.sleep(20)
-                else:
-                    return False
-        except requests.exceptions.RequestException as e:
-            print(f"Attempt {attempt+1} - Connection error: {e}", flush=True)
-            if attempt < max_retries - 1:
-                time.sleep(5)
-            else:
-                return False
+      try:
+        response = requests.post(
+            api_url, headers=headers, json={"inputs": prompt_text}, timeout=60
+        )
+        content_type = response.headers.get("Content-Type", "")
+        if response.status_code == 200 and (
+            "audio" in content_type or len(response.content) > 2000
+        ):
+          with open(output_filename, "wb") as f:
+            f.write(response.content)
+          print("AI Background music generated via HF Router!", flush=True)
+          return True
+        else:
+          print(
+              f"HF Router attempt {attempt + 1} status {response.status_code}:"
+              f" {response.text[:200]}",
+              flush=True,
+          )
+          if response.status_code == 503:
+            time.sleep(10)
+          else:
+            break
+      except requests.exceptions.RequestException as e:
+        print(f"HF Router attempt {attempt + 1} error: {e}", flush=True)
+        time.sleep(3)
+
+  print("Using built-in procedural fallback BGM generator...", flush=True)
+  try:
+    from pydub import AudioSegment
+
+    wav_path = create_fallback_bgm("fallback_bgm.wav", duration_sec=12.0)
+    AudioSegment.from_wav(wav_path).export(output_filename, format="mp3")
+    print("Fallback BGM created successfully!", flush=True)
+    return True
+  except Exception as e:
+    print(f"Fallback BGM failed: {e}", flush=True)
     return False
+
 
 def main():
   from faster_whisper import WhisperModel
@@ -129,29 +171,26 @@ def main():
   os.makedirs(OUT, exist_ok=True)
   print(f"Loading {AUDIO_FILE} ...", flush=True)
   audio = AudioSegment.from_file(AUDIO_FILE)
-  
+
   # --- AUTO BGM GENERATION & MIXING ---
   bgm_file = "background_music.mp3"
-  music_prompt = "Epic historical documentary background music, cinematic orchestra, fast-paced, suspenseful, no vocals"
-  
+  music_prompt = (
+      "Epic historical documentary background music, cinematic orchestra,"
+      " fast-paced, suspenseful, no vocals"
+  )
+
   if generate_ai_bgm(music_prompt, bgm_file):
-      try:
-          print("Mixing Background Music with voiceover...", flush=True)
-          bgm = AudioSegment.from_file(bgm_file)
-          bgm = bgm - 16  # ভলিউম 16 dB কমানো
-          
-          # ভয়েসওভারের সমান করার জন্য লুপ করা
-          loops_needed = int(len(audio) / len(bgm)) + 1
-          bgm_looped = bgm * loops_needed
-          bgm_looped = bgm_looped[:len(audio)]
-          
-          # মূল অডিওর সাথে মিক্স করা
-          audio = audio.overlay(bgm_looped)
-          print("BGM Mixed successfully!", flush=True)
-      except Exception as e:
-          print(f"Error mixing BGM: {e}", flush=True)
-  else:
-      print("Proceeding without BGM due to generation failure.", flush=True)
+    try:
+      print("Mixing Background Music with voiceover...", flush=True)
+      bgm = AudioSegment.from_file(bgm_file)
+      bgm = bgm - 16  # ভয়েস ক্লিয়ার রাখতে ভলিউম 16 dB কমানো
+
+      loops_needed = int(len(audio) / len(bgm)) + 1
+      bgm_looped = (bgm * loops_needed)[: len(audio)]
+      audio = audio.overlay(bgm_looped)
+      print("BGM Mixed successfully!", flush=True)
+    except Exception as e:
+      print(f"Error mixing BGM: {e}", flush=True)
   # ------------------------------------
 
   total = len(audio) / 1000.0
@@ -206,7 +245,7 @@ def main():
 
     with open(f"{OUT}/prompt_{i}.txt", "w", encoding="utf-8") as f:
       f.write(prompt)
-    combined.append(f"===== PROMPT {i} =====\\n{prompt}\\n")
+    combined.append(f"===== PROMPT {i} =====\n{prompt}\n")
 
     meta.append({
         "index": i,
@@ -217,11 +256,12 @@ def main():
     print(f"Chunk {i}: {duration:.1f}s | {text[:60]}...", flush=True)
 
   with open(f"{OUT}/all_prompts.txt", "w", encoding="utf-8") as f:
-    f.write("\\n\\n".join(combined))
+    f.write("\n\n".join(combined))
   with open(f"{OUT}/chunks.json", "w", encoding="utf-8") as f:
     json.dump(meta, f, ensure_ascii=False, indent=2)
 
   print(f"Done: {OUT}/ ({len(chunks)} chunks created)", flush=True)
+
 
 if __name__ == "__main__":
   main()
