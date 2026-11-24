@@ -1,0 +1,49 @@
+name: Prepare Shorts Prompts V2 (9:16)
+
+on:
+  workflow_dispatch:
+    inputs:
+      audio_drive_input:
+        description: "Google Drive file link or ID for input_audio.mp3 (optional if using default)"
+        required: false
+        default: ""
+      drive_folder_name:
+        description: "Google Drive folder name to upload prompts"
+        required: false
+        default: "shorts-prompts-package-v2"
+
+jobs:
+  prepare-shorts-v2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install faster-whisper pydub gdown
+
+      - name: Download Audio from Drive
+        env:
+          AUDIO_INPUT: ${{ github.event.inputs.audio_drive_input }}
+        run: |
+          pip install gdown
+          gdown "$AUDIO_INPUT" -O input_audio.mp3
+
+      - name: Split Audio, Transcribe & Build 9:16 Shorts Prompts V2
+        run: |
+          python -u prepare_shorts_prompts_v2.py
+
+      - name: Upload Shorts Prompts to Drive
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+        run: |
+          python upload_to_drive.py prompts_output "${{ github.event.inputs.drive_folder_name || 'shorts-prompts-package-v2' }}"
