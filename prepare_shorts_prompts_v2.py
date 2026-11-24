@@ -24,8 +24,8 @@ Timed Visual & Action Sequence:
 Canvas Coordinate System: {WIDTH}x{HEIGHT} (9:16 Vertical Full-Screen SVG)
 
 CRITICAL CINEMATIC DIRECTION & STUDIO RULES:
-1. NO SLIDESHOWS — TRUE CINEMATIC CAMERA & PARALLAX DEPTH:
-   - A static scene or simple slideshow cut is UNACCEPTABLE. Every single shot MUST feel like a real camera moving through a 3D world.
+1. VISUALIZE EVERYTHING — NO SLIDESHOWS, TRUE CINEMATIC CAMERA & PARALLAX DEPTH:
+   - Visualize every single concept, emotion, statistic, and historical event mentioned in the narration through rich animated metaphors, dynamic maps, and character actions—never rely on plain backgrounds or text to tell the story.
    - Inside EACH shot `<g id="shot-N">`, structure artwork into 3 distinct depth layers (`class="bg-layer"`, `class="mid-layer"`, `class="fg-layer"`).
    - In `window.updateSceneTime(t_ms)`, calculate normalized shot progress `p` (from `0.0` to `1.0` within that shot's active window) and apply continuous mathematical camera transforms (`translate` and `scale`) so the camera continuously pushes in, zooms out, or pans across the scene.
    - Apply parallax depth across all layers: shift `bg-layer` at `0.3x` speed, `mid-layer` at `1.0x` speed, and `fg-layer` (silhouettes, smoke, sparks, foreground pillars) at `1.6x` speed.
