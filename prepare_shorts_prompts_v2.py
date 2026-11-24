@@ -11,11 +11,10 @@ def build_cartoon_rigging_prompt(
     scene_text, duration, timeline="", chunk_idx=0
 ):
   duration_ms = int(duration * 1000)
-  # প্রতি ২.২ সেকেন্ডে অন্তত ১টি করে নতুন শট বা বড় ভিজ্যুয়াল পরিবর্তন
   min_shots = max(12, int(round(duration / 2.2)))
 
   return f"""
-You are an elite 2D Vector Animation Director (OverSimplified / Kurzgesagt studio quality). Build a complete, self-contained HTML5 file (`<!DOCTYPE html>`) with ultra-fast-paced, cinematic multi-shot 9:16 VERTICAL vector animation engineered specifically for high retention on YouTube Shorts.
+You are an elite 2D Vector Animation Director (OverSimplified / Kurzgesagt / LEMMiNO studio quality). Build a complete, self-contained HTML5 file (`<!DOCTYPE html>`) with deeply cinematic, fast-paced, multi-shot 9:16 VERTICAL vector animation engineered for maximum viewer retention on YouTube Shorts.
 
 Clip Index: Part {chunk_idx + 1}
 Narration: "{scene_text}"
@@ -24,44 +23,43 @@ Timed Visual & Action Sequence:
 {timeline}
 Canvas Coordinate System: {WIDTH}x{HEIGHT} (9:16 Vertical Full-Screen SVG)
 
-CRITICAL VIRAL RETENTION & STUDIO QUALITY RULES:
-1. ULTRA-FAST MULTI-SHOT PACING (EVERY 2 SECONDS):
-   - Retention is everything. NEVER hold a static angle for more than 2.5 seconds. NO modern studios, podcast mics, hosts, or talking heads. Focus 100% on historical environments, armies, architecture, tactical maps, and visual metaphors.
+CRITICAL CINEMATIC DIRECTION & STUDIO RULES:
+1. NO SLIDESHOWS — TRUE CINEMATIC CAMERA & PARALLAX DEPTH:
+   - A static scene or simple slideshow cut is UNACCEPTABLE. Every single shot MUST feel like a real camera moving through a 3D world.
+   - Inside EACH shot `<g id="shot-N">`, structure artwork into 3 distinct depth layers (`class="bg-layer"`, `class="mid-layer"`, `class="fg-layer"`).
+   - In `window.updateSceneTime(t_ms)`, calculate normalized shot progress `p` (from `0.0` to `1.0` within that shot's active window) and apply continuous mathematical camera transforms (`translate` and `scale`) so the camera continuously pushes in, zooms out, or pans across the scene.
+   - Apply parallax depth across all layers: shift `bg-layer` at `0.3x` speed, `mid-layer` at `1.0x` speed, and `fg-layer` (silhouettes, smoke, sparks, foreground pillars) at `1.6x` speed.
+   - Add impact camera shake (`Math.sin(t_ms * 0.12) * 7`) during explosions, battle clashes, or dramatic reveals.
+
+2. ULTRA-FAST MULTI-SHOT PACING (EVERY 2 SECONDS):
    - Divide this {duration}s clip into AT LEAST {min_shots} DISTINCT visual shots inside a single `<svg viewBox="0 0 {WIDTH} {HEIGHT}" style="width:100vw; height:100vh; display:block;">`:
      * `<g id="shot-1">...</g>`, `<g id="shot-2">...</g>`, up to `<g id="shot-{min_shots}">...</g>`
-   - **MANDATORY 2-SECOND OPENING HOOK (`shot-1`, 0ms to 2500ms):** Start immediately with high-stakes visual action—an explosion, dramatic zoom-in on a shocked/angry character, an advancing army arrow on a map, or a visual mystery. NEVER start with a slow empty landscape.
-   - Alternate shot types rapidly:
-     * Extreme close-up of intense character emotion or symbolic artifact
-     * Tactical war-room map with animated glowing territory arrows & borders
-     * Medium dramatic character confrontation or battle clash
-     * Wide establishing environment with 3-layer parallax
-   - In `window.updateSceneTime(t_ms)`, strictly cut between shots (`display: none` vs `inline`) every 2.0–2.5 seconds synced to the Timed Sequence.
+   - **MANDATORY 2-SECOND OPENING HOOK (`shot-1`, 0ms to 2500ms):** Start mid-action with high visual tension—a sudden dramatic zoom into an intense face, cannon fire, glowing tactical map invasion, or mysterious artifact. Never start with a slow empty landscape.
+   - Alternate framing dynamically between extreme Dutch-angles, sweeping aerial map pans, over-the-shoulder character confrontations, and wide establishing environments.
 
-2. VERTICAL FRAMING, CAMERA SHAKE & CONTINUOUS MOTION (9:16 SAFE ZONE):
-   - Keep main characters and action centered between X: 60 to 600 and Y: 200 to 980 so YouTube Shorts UI buttons never cover important details.
-   - Apply continuous camera motion to EVERY active shot using `t_ms`: punch-in zooms (`scale(1.0)` to `scale(1.12)`), vertical/horizontal pans, and camera shake (`Math.sin(t_ms * 0.1) * 6`) during impacts or dramatic reveals.
-   - Include ambient motion in every shot: drifting smoke/clouds, waving flags, flickering fire, or marching silhouettes.
+3. VERTICAL FRAMING (9:16 SAFE ZONE):
+   - Keep focal points, faces, and key action centered between X: 60 to 600 and Y: 200 to 980 so YouTube Shorts UI icons never obstruct important visuals.
 
-3. EXPRESSIVE CHARACTER RIGGING & LIP-SYNC (NO STICK FIGURES):
-   - Build expressive OverSimplified/Kurzgesagt characters using layered `<path>` and `<g>` elements with bold `3px-4px` dark outlines (`#1a1a2e`):
-     * Detailed historical helmets, crowns, uniforms, armor, and props (swords, maps, cannons, scrolls).
+4. EXPRESSIVE CHARACTER RIGGING & LIP-SYNC (NO STICK FIGURES):
+   - Build rich OverSimplified/Kurzgesagt characters using layered `<path>` elements, gradients, rim lighting, and bold `3px-4px` dark outlines (`#1a1a2e`):
+     * Detailed historical headgear, crowns, uniforms, armor, and period props.
      * Expressive faces: angled eyebrows for anger/shock, periodic blinking, and animated mouth/jaw opening/closing rhythmically using `Math.abs(Math.sin(t_ms * 0.028))` during active Narration timestamps.
      * Hierarchical limb rigging pivoted at shoulders and hips using `transform-origin` and sine waves driven by `t_ms`.
 
-4. VISUAL POLISH, TYPOGRAPHY & NO SUBTITLES:
-   - Rich color palettes with `<linearGradient>`, `<radialGradient>`, drop shadows, and crisp vector shading.
-   - **STRICTLY NO SUBTITLES OR CAPTIONS.** Use only bold cinematic on-screen titles/labels (max 3-4 words: dates, locations, troop numbers like "1513 AD" or "50,000 TROOPS") when key visual cues hit.
+5. CINEMATIC LIGHTING, TYPOGRAPHY & NO SUBTITLES:
+   - Use dramatic `<linearGradient>`, `<radialGradient>`, vignette overlays, glowing highlights, and drop shadows for atmospheric depth.
+   - **STRICTLY NO SUBTITLES OR CAPTIONS.** Use only bold cinematic on-screen titles/labels (max 3-4 words for key dates, locations, or troop numbers) integrated into the scene perspective.
 
-5. SEAMLESS LOOP ENDING:
-   - In the final 1.5 seconds (`{duration_ms - 1500}ms` to `{duration_ms}ms`), apply a dramatic whip-zoom or visual transition that matches the energy of `shot-1` to encourage seamless looping.
+6. SEAMLESS LOOP TRANSITION:
+   - In the final 1.5 seconds (`{duration_ms - 1500}ms` to `{duration_ms}ms`), execute a rapid whip-zoom into darkness or a focal element that visually matches `shot-1` for seamless looping.
 
-6. DETERMINISTIC RENDER HOOK (STRICT):
+7. DETERMINISTIC RENDER HOOK (STRICT):
    - CSS must set `html, body {{ margin: 0; padding: 0; overflow: hidden; background: #0d1117; }}`.
    - Provide `window.updateSceneTime = function(t_ms) {{ ... }}` and call `window.updateSceneTime(0);` at load.
    - Strictly NO `requestAnimationFrame`, `setInterval`, `setTimeout`, `Date.now()`, or CSS `@keyframes`.
-   - Every movement, camera pan, mouth movement, and shot cut MUST be a pure mathematical function of `t_ms` (0 to {duration_ms}).
+   - Every movement, parallax shift, camera zoom, mouth movement, and shot cut MUST be a pure mathematical function of `t_ms` (0 to {duration_ms}).
 
-7. OUTPUT:
+8. OUTPUT:
    - Output ONLY the standalone HTML code wrapped inside a single ```html ... ``` block. No explanations.
 """.strip()
 
