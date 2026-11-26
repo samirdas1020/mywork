@@ -112,8 +112,7 @@ def build_timeline(chunk_segments, chunk_start, chunk_duration):
         " reaction & transition zoom"
     )
 
-  return "
-".join(lines), speech_windows
+  return "\n".join(lines), speech_windows
 
 
 def main():
@@ -187,9 +186,7 @@ def main():
 
     with open(f"{OUT}/prompt_{i}.txt", "w", encoding="utf-8") as f:
       f.write(prompt)
-    combined.append(f"===== PROMPT {i} =====
-{prompt}
-")
+    combined.append(f"===== PROMPT {i} =====\n{prompt}\n")
 
     meta.append({
         "index": i,
@@ -201,9 +198,7 @@ def main():
     print(f"Chunk {i}: {duration:.1f}s | {text[:60]}...", flush=True)
 
   with open(f"{OUT}/all_prompts.txt", "w", encoding="utf-8") as f:
-    f.write("
-
-".join(combined))
+    f.write("\n\n".join(combined))
   with open(f"{OUT}/chunks.json", "w", encoding="utf-8") as f:
     json.dump(meta, f, ensure_ascii=False, indent=2)
 
