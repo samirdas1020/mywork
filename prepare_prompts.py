@@ -56,7 +56,7 @@ CRITICAL CINEMATIC DIRECTION & STUDIO RULES:
    - Motivate lighting in each shot with a clear light source direction, shadow contrast, dramatic `<linearGradient>`, `<radialGradient>`, vignette overlays, glowing highlights, and drop shadows for film-like depth.
    - Every shot MUST tell the story through animated characters, objects, maps, lighting shifts, and physical cause-and-effect—NEVER rely on large text, counters, or title cards as the main visual of a shot.
    - Every shot must contain at least TWO distinct in-scene animations (e.g., character gesture/limb/head motion + moving vehicles/projectiles/smoke/light beams/map shifts) in addition to camera travel and 3-layer parallax.
-   - **STRICTLY NO SUBTITLES OR CAPTIONS.** Use bold cinematic on-screen labels (max 4 words: dates, locations, troop numbers) ONLY when relevant cues hit, secondary to the main action and placed naturally within the visible viewport without clipping or covering key faces.
+   - **STRICTLY NO SUBTITLES OR CAPTIONS.** Keep any on-screen labels minimal (1-2 words or a year) and secondary to the main action, placed naturally within the visible viewport without clipping or covering key faces.
 
 6. DETERMINISTIC RENDER HOOK (STRICT):
    - CSS must set `html, body {{ margin: 0; padding: 0; overflow: hidden; background: #0d1117; }}`.
